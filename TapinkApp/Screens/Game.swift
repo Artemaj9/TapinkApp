@@ -1,4 +1,4 @@
-import SwiftUI
+@preconcurrency import SwiftUI
 
 struct Game: View {
     @EnvironmentObject var vm: GameViewModel
@@ -14,13 +14,13 @@ struct Game: View {
             FieldShape(path: path)
                   .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
             
-            FieldShape(path: vm.crossShapeLevel10(in: vm.gameFieldBounds, wallWidth: 0))
-              .fill(.yellow)
+           
           }
-//          Rectangle()
-//                      .strokeBorder(Color.purple, lineWidth: 4)
-//                      .frame(width: 350, height: 700)
-//                      .position(x: vm.size.width / 2, y: vm.size.height / 2)
+          
+          if let cross = vm.rotatedCrossPath() {
+              FieldShape(path: cross)
+                  .fill(.red.opacity(0.4))
+          }
             // Portal
             Rectangle()
                 .fill(Color.yellow.opacity(0.8))
@@ -72,19 +72,13 @@ struct Game: View {
         .onDisappear {
             vm.stopGameLoop()
         }
-        .contentShape(Rectangle()) // full screen tappable
-        .coordinateSpace(name: "game")               // local coords
-               .gesture(DragGesture(minimumDistance: 0)     // tap-with-location
+        .contentShape(Rectangle())
+        .coordinateSpace(name: "game")
+               .gesture(DragGesture(minimumDistance: 0)
                    .onEnded { value in
-                       vm.handleTap(at: value.location)     // only fires if inside
+                       vm.handleTap(at: value.location)
                    }
                )
-//        .onTapGesture {
-//        //  withAnimation {
-//            vm.handleTap()
-//         // }
-//           
-//        }
         .navigationBarBackButtonHidden()
     }
 }

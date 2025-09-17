@@ -18,12 +18,18 @@ final class GameViewModel: ObservableObject {
   private var startBigPoint: CGPoint = .zero
   
   var radius: CGFloat = 50
-  @Published var currentLevel = 9
+  @Published var currentLevel = 10
       
       let orbitRadius: CGFloat = 30
       private var rotationAngle: CGFloat = 0
       private var timerCancellable: AnyCancellable?
       private var isRotationPaused = false
+  
+  
+  // CROSS LOGIC
+  @Published var crossAngle: CGFloat = 0          // animates slowly
+  private var crossBasePath: CGPath?              // unrotated cross
+  private var crossPivot: CGPoint = .zero
       
       // MARK: - Game field
       private(set) var gameField: CGRect = .zero
@@ -40,6 +46,12 @@ final class GameViewModel: ObservableObject {
       let fieldWidth = size.width //size.width * 0.9 // level 4
       let fieldHeight = size.height * 0.7
       let center = CGPoint(x: size.width / 2, y: size.height / 2)
+    
+    
+    
+    
+    
+ 
 
       gameFieldBounds = CGRect(
           x: center.x - fieldWidth / 2,
@@ -53,6 +65,9 @@ final class GameViewModel: ObservableObject {
   //  gameFieldPath = level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
    // gameFieldPath = level4PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
     gameFieldPath = level10PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)//level4PlayablePath
+    let cross = crossShapeLevel10(in: gameFieldBounds, wallWidth: wallWidth)
+     crossBasePath = cross.path
+     crossPivot    = cross.pivot
 
       // Inner playable “corridor” bounds (inside walls)
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
@@ -157,6 +172,7 @@ final class GameViewModel: ObservableObject {
           guard !hasWon, !isRotationPaused else { return }
         
           rotationAngle += 0.08
+          crossAngle += 0.01
           updateSmallPosition()
           
           checkLoseCondition()
@@ -218,6 +234,11 @@ final class GameViewModel: ObservableObject {
         let bigInside = pointInsideField(big)
          let smallInside = pointInsideField(small) || currentLevel == 9
          if !bigInside || !smallInside {
+             resetGame()
+         }
+        
+        if intersectsRotatingCross(center: big, radius: 10) ||
+            intersectsRotatingCross(center: small, radius: 5) {
              resetGame()
          }
 //          if !bigInside || !smallInside {
@@ -417,31 +438,61 @@ final class GameViewModel: ObservableObject {
       return p
   }
   
-  
-  func crossShapeLevel10(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
-    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
-    let p = CGMutablePath()
-    let height = inner.maxY - inner.minY
-    let width = inner.maxX - inner.minX
-    let cl = width*0.07
-    let ch = height*0.3
-    p.move(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2 + ch))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 , y: inner.minY + height*0.2 + ch + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch + cl))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
+  func crossShapeLevel10(in rect: CGRect, wallWidth: CGFloat) -> (path: CGPath, pivot: CGPoint) {
+      let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+      let height = inner.height
+      let width  = inner.width
+      let cl = width * 0.07
+      let ch = height * 0.25
 
-    p.closeSubpath()
-      return p
+      let sx = inner.minX + width * 0.7
+      let sy = inner.minY + height * 0.3
+
+      let p = CGMutablePath()
+      p.move(to: CGPoint(x: sx,            y: sy))
+      p.addLine(to: CGPoint(x: sx + cl,    y: sy))
+      p.addLine(to: CGPoint(x: sx + cl,    y: sy + ch))
+      p.addLine(to: CGPoint(x: sx + cl + ch, y: sy + ch))
+      p.addLine(to: CGPoint(x: sx + cl + ch, y: sy + ch + cl))
+      p.addLine(to: CGPoint(x: sx + cl,    y: sy + ch + cl))
+      p.addLine(to: CGPoint(x: sx + cl,    y: sy + ch + ch + cl))
+      p.addLine(to: CGPoint(x: sx,         y: sy + ch + ch + cl))
+      p.addLine(to: CGPoint(x: sx,         y: sy + ch + cl))
+      p.addLine(to: CGPoint(x: sx - ch,    y: sy + ch + cl))
+      p.addLine(to: CGPoint(x: sx - ch,    y: sy + ch))
+      p.addLine(to: CGPoint(x: sx,         y: sy + ch))
+      p.addLine(to: CGPoint(x: sx,         y: sy))
+      p.closeSubpath()
+
+      // true geometric center where bars cross
+      let pivot = CGPoint(x: sx + cl * 0.5, y: sy + ch + cl * 0.5)
+      return (p, pivot)
   }
+  
+//  func crossShapeLevel10(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+//    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+//    let p = CGMutablePath()
+//    let height = inner.maxY - inner.minY
+//    let width = inner.maxX - inner.minX
+//    let cl = width*0.07
+//    let ch = height*0.3
+//    p.move(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2 + ch))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 , y: inner.minY + height*0.2 + ch + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch + cl))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch))
+//    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
+//
+//    p.closeSubpath()
+//      return p
+//  }
   
   
   func pointInsideField(_ p: CGPoint) -> Bool {
@@ -497,6 +548,33 @@ final class GameViewModel: ObservableObject {
                      CGPoint(x: r.maxX, y: r.maxY),
                      CGPoint(x: r.minX, y: r.maxY)]
       return corners.allSatisfy { pointInsideField($0) }
+  }
+  
+  
+  func rotatedCrossPath() -> CGPath? {
+      guard let base = crossBasePath else { return nil }
+      var t = CGAffineTransform.identity
+      t = t.translatedBy(x:  crossPivot.x, y:  crossPivot.y)
+      t = t.rotated(by: crossAngle)
+      t = t.translatedBy(x: -crossPivot.x, y: -crossPivot.y)
+      return base.copy(using: &t)
+  }
+
+  func pointInsideCross(_ p: CGPoint) -> Bool {
+      guard let path = rotatedCrossPath() else { return false }
+      return path.contains(p) // filled cross
+  }
+  
+  private func intersectsRotatingCross(center: CGPoint, radius: CGFloat) -> Bool {
+      guard let cross = rotatedCrossPath() else { return false }
+
+      // Inside the filled cross ⇒ collision
+      if cross.contains(center) { return true }
+
+      // Near the edges within `radius` ⇒ collision
+      let halo = cross.copy(strokingWithWidth: radius * 2,
+                            lineCap: .round, lineJoin: .round, miterLimit: 10)
+      return halo.contains(center)
   }
   
   // GAME
@@ -930,3 +1008,5 @@ extension CGMutablePath {
       return clockwise ? CGPoint(x: cx1, y: cy1) : CGPoint(x: cx2, y: cy2)
   }
 }
+
+private extension CGRect { var center: CGPoint { .init(x: midX, y: midY) } }
