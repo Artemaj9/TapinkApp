@@ -18,7 +18,7 @@ final class GameViewModel: ObservableObject {
   private var startBigPoint: CGPoint = .zero
   
   var radius: CGFloat = 50
-
+  @Published var currentLevel = 9
       
       let orbitRadius: CGFloat = 30
       private var rotationAngle: CGFloat = 0
@@ -32,12 +32,12 @@ final class GameViewModel: ObservableObject {
 // <- the playable shape (even-odd)
 
    // thickness of the purple "walls"
-   var wallWidth: CGFloat = 8
+   var wallWidth: CGFloat = 4
       var portalRect: CGRect = .zero
       var bonusRect: CGRect = .zero
   
   func setGameField(size: CGSize) {
-      let fieldWidth = size.width * 0.9
+      let fieldWidth = size.width //size.width * 0.9 // level 4
       let fieldHeight = size.height * 0.7
       let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
@@ -50,7 +50,9 @@ final class GameViewModel: ObservableObject {
 
       // Build Level 2 shape
     //  gameFieldPath = level2PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
-    gameFieldPath = level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+  //  gameFieldPath = level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+   // gameFieldPath = level4PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    gameFieldPath = level9PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)//level4PlayablePath
 
       // Inner playable “corridor” bounds (inside walls)
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
@@ -58,8 +60,8 @@ final class GameViewModel: ObservableObject {
       // ---- FIXED POSITIONS ----
 
       // 1) Big circle starts at the upper/top area (tweak offset if you like)
-      let startOffset: CGFloat = 160
-      startBigPoint = CGPoint(x: inner.minX + startOffset, y: inner.minY + startOffset)
+    let startOffset: CGFloat = 160
+      startBigPoint = CGPoint(x: inner.minX + 3*startOffset, y: inner.minY + startOffset)
 
       // 2) Portal fixed near the left-bottom area
       //    (kept safely inside walls by a margin)
@@ -132,8 +134,9 @@ final class GameViewModel: ObservableObject {
           prizeCount = 0
           rotationAngle = 0
           
-        big = CGPoint(x: gameFieldBounds.midX, y: gameFieldBounds.minY + 40)
+        big = CGPoint(x: gameFieldBounds.midX + gameFieldBounds.width*0.3, y: gameFieldBounds.minY + 40)
           updateSmallPosition()
+      //  stopGameLoop()
       }
       
       // MARK: - Game loop
@@ -152,7 +155,7 @@ final class GameViewModel: ObservableObject {
       
       private func tick() {
           guard !hasWon, !isRotationPaused else { return }
-          
+        
           rotationAngle += 0.08
           updateSmallPosition()
           
@@ -213,15 +216,27 @@ final class GameViewModel: ObservableObject {
        //   let bigInside = gameField.contains(big)
          // let smallInside = gameField.contains(small)
         let bigInside = pointInsideField(big)
-         let smallInside = pointInsideField(small)
+         let smallInside = pointInsideField(small) || currentLevel == 9
          if !bigInside || !smallInside {
              resetGame()
          }
-          if !bigInside || !smallInside {
-              resetGame()
-          }
+//          if !bigInside || !smallInside {
+//              resetGame()
+//          }
       }
   
+  private func level1PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+      // 1) Start with the inner rectangle (inside the outer frame)
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.closeSubpath()
+      return p
+  }
 
   private func level2PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
       // 1) Start with the inner rectangle (inside the outer frame)
@@ -257,6 +272,121 @@ final class GameViewModel: ObservableObject {
       return p
   }
   
+  private func level4PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+      // 1) Start with the inner rectangle (inside the outer frame)
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+
+    let center1 = CGPoint(x: inner.minX + 0.25*(inner.maxX - inner.minX), y: inner.minY + 0.7*(inner.maxY - inner.minY))
+    let radius1 = 0.4*(inner.maxX - inner.minX)
+    let p1 = CGPoint(x: inner.minX, y: inner.minY + (inner.maxY - inner.minY)*0.6)
+    let p2 = CGPoint(x: center1.x, y: center1.y - radius1)
+    let p3 = CGPoint(x: inner.maxX, y: inner.minY + 0.04*(inner.maxY - inner.minY))
+    let center2 = CGPoint(x: inner.minX + 0.6*(inner.maxX - inner.minX), y: inner.minY + 0.2*(inner.maxY - inner.minY))
+    let radius2 = inner.maxX*0.5
+    let realcenter = p.circleCenter(start: p2, end: p3, radius: radius2, clockwise: true)
+    let p4 = CGPoint(x: inner.maxX, y: sqrt(radius2*radius2 - (realcenter.x-inner.maxX)*(realcenter.x-inner.maxX)) + realcenter.y)
+    let p5 = CGPoint(x: realcenter.x - radius2*sin(.pi/8) , y: realcenter.y + radius2*cos(.pi/8) )
+    let p6 = CGPoint(x: inner.minX, y: inner.maxY)
+
+ 
+   // p.move(to: CGPoint(x: inner.minX, y: inner.minY))
+  //  p.addLine(to: p1)
+    p.addArc(center: center1, radius: radius1, startAngle:  atan2(p1.y - center1.y, p1.x - center1.x), endAngle: -.pi/2, clockwise: false)
+    p.addArcBetween(start: p2, end: p3, radius: radius2, clockwise: false)
+    p.addLine(to: p4)
+    p.addArcBetween(start: p4, end: p5, radius: radius2, clockwise: false)
+    p.addArcBetween(start: p5, end: p6, radius: radius1, clockwise: false)
+    p.addLine(to: p1)
+
+      return p
+  }
+  
+  
+  private func level5PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.closeSubpath()
+      return p
+  }
+  
+  
+  private func level6PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    let height = inner.maxY - inner.minY
+    let width = inner.maxX - inner.minX
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.midY + height*0.2))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.65, y: inner.midY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.midY - height*0.2))
+    p.addLine(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.closeSubpath()
+      return p
+  }
+  
+  private func level7PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    let height = inner.maxY - inner.minY
+    let width = inner.maxX - inner.minX
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY + height*0.4))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.35, y: inner.minY + height*0.6))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY + height*0.55))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.midX, y: inner.maxY - height*0.05))
+    p.addLine(to: CGPoint(x: inner.minX , y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX , y: inner.minY))
+    
+    p.closeSubpath()
+      return p
+  }
+  
+  private func level9PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let height = inner.maxY - inner.minY
+    let width = inner.maxX - inner.minX
+    let path = CGMutablePath()
+    path.move(to: CGPoint(x: 0.44249*width, y:inner.minY + 0.44811*height))
+    path.addLine(to: CGPoint(x: 0.6246*width, y:inner.minY + 0.34906*height))
+    path.addLine(to: CGPoint(x: 0.65176*width, y:inner.minY + 0.22759*height))
+    path.addLine(to: CGPoint(x: 0.65176*width, y:inner.minY + 0.15684*height))
+    path.addLine(to: CGPoint(x: 0.65176*width, y:inner.minY + 0.09316*height))
+    path.addLine(to: CGPoint(x: 0.73962*width, y:inner.minY + 0.00118*height))
+    path.addLine(to: CGPoint(x: 0.89297*width, y:inner.minY + 0.01533*height))
+    path.addLine(to: CGPoint(x: 0.9984*width, y:inner.minY + 0.10731*height))
+    path.addLine(to: CGPoint(x: 0.95208*width, y:inner.minY + 0.20637*height))
+    path.addLine(to: CGPoint(x: 0.8147*width, y:inner.minY + 0.24764*height))
+    path.addLine(to: CGPoint(x: 0.73962*width, y:inner.minY + 0.31722*height))
+    path.addLine(to: CGPoint(x: 0.73962*width, y:inner.minY + 0.40684*height))
+    path.addLine(to: CGPoint(x: 0.65176*width, y:inner.minY + 0.43632*height))
+    path.addLine(to: CGPoint(x: 0.54952*width, y:inner.minY + 0.47642*height))
+    path.addLine(to: CGPoint(x: 0.4984*width, y:inner.minY + 0.58373*height))
+    path.addLine(to: CGPoint(x: 0.44249*width, y:inner.minY + 0.7158*height))
+    path.addLine(to: CGPoint(x: 0.377*width, y:inner.minY + 0.81486*height))
+    path.addLine(to: CGPoint(x: 0.29872*width, y:inner.minY + 0.93042*height))
+    path.addLine(to: CGPoint(x: 0, y:inner.minY + 0.99882*height))
+    path.addLine(to: CGPoint(x: 0, y:inner.minY + 0.87736*height))
+    path.addLine(to: CGPoint(x: 0.19968*width, y:inner.minY + 0.83726*height))
+    path.addLine(to: CGPoint(x: 0.29872*width, y:inner.minY + 0.7158*height))
+    path.addLine(to: CGPoint(x: 0.377*width, y:inner.minY + 0.58373*height))
+    path.addLine(to: CGPoint(x: 0.44249*width, y:inner.minY + 0.44811*height))
+            path.closeSubpath()
+            path.move(to: CGPoint(x: 0.44249*width, y:inner.minY + 0.44811*height))
+
+            return path
+  }
+  
   func pointInsideField(_ p: CGPoint) -> Bool {
       guard let path = gameFieldPath else { return false }
       return path.contains(p, using: .evenOdd, transform: .identity)
@@ -276,6 +406,20 @@ final class GameViewModel: ObservableObject {
           CGPoint(x: a.x - ox, y: a.y - oy)
       ]
   }
+  
+  private func level8PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.closeSubpath()
+      return p
+  }
+  
+ 
   
   
   func handleTap(at point: CGPoint) {
@@ -620,5 +764,122 @@ final class GameViewModel: ObservableObject {
   
   var isSEight: Bool {
     return isSE || isEightPlus
+  }
+}
+
+extension CGPoint {
+    func distance(to point: CGPoint) -> CGFloat {
+        let dx = point.x - x
+        let dy = point.y - y
+        return sqrt(dx*dx + dy*dy)
+    }
+}
+
+extension CGMutablePath {
+    /// Adds an arc from `start` to `end` with a given `radius` and clockwise flag
+//    func addArcBetween(start: CGPoint, end: CGPoint, radius: CGFloat, clockwise: Bool = true) {
+//        // Compute the angle between points
+//        let dx = end.x - start.x
+//        let dy = end.y - start.y
+//        let angle = atan2(dy, dx)
+//
+//        // Midpoint
+//        let mid = CGPoint(x: (start.x + end.x)/2, y: (start.y + end.y)/2)
+//
+//        // Compute a perpendicular offset to create the "arc bulge"
+//        let perpAngle = angle + (clockwise ? .pi/2 : -.pi/2)
+//        let controlX = mid.x + radius * cos(perpAngle)
+//        let controlY = mid.y + radius * sin(perpAngle)
+//        let control = CGPoint(x: controlX, y: controlY)
+//
+//        // Add quadratic curve
+//        self.move(to: start)
+//        self.addQuadCurve(to: end, control: control)
+//    }
+  
+  func addArcBetween(start: CGPoint, end: CGPoint, radius: CGFloat, clockwise: Bool = true) {
+      let dx = end.x - start.x
+      let dy = end.y - start.y
+      let d = sqrt(dx*dx + dy*dy)
+
+      // No circle possible if points are too far apart
+      guard d <= 2 * radius else {
+          self.move(to: start)
+          self.addLine(to: end)
+          return
+      }
+
+      // Midpoint
+      let mid = CGPoint(x: (start.x + end.x)/2, y: (start.y + end.y)/2)
+
+      // Distance from midpoint to center along perpendicular bisector
+      let h = sqrt(max(0, radius*radius - (d/2)*(d/2)))
+
+      // Unit vector from start→end
+      let ux = dx / d
+      let uy = dy / d
+
+      // Perpendicular unit vector
+      let px = -uy
+      let py = ux
+
+      // Two possible centers
+      let c1 = CGPoint(x: mid.x + h * px, y: mid.y + h * py)
+      let c2 = CGPoint(x: mid.x - h * px, y: mid.y - h * py)
+
+      // Pick the correct center depending on clockwise
+      let center: CGPoint
+      let angle1 = atan2(start.y - c1.y, start.x - c1.x)
+      let angle2 = atan2(end.y - c1.y, end.x - c1.x)
+      let delta = angle2 - angle1
+
+      // Normalize into (-π, π]
+      let normalizedDelta = atan2(sin(delta), cos(delta))
+      let isClockwiseFromC1 = normalizedDelta < 0
+
+      if clockwise == isClockwiseFromC1 {
+          center = c1
+      } else {
+          center = c2
+      }
+
+      // Start & end angles
+      let startAngle =  Double(atan2(start.y - center.y, start.x - center.x))
+      let endAngle   =  Double(atan2(end.y - center.y, end.x - center.x))
+
+      self.move(to: start)
+      self.addArc(center: center,
+                  radius: radius,
+                  startAngle: startAngle,
+                  endAngle: endAngle,
+                  clockwise: clockwise)
+  }
+  
+  func circleCenter(start: CGPoint, end: CGPoint, radius: CGFloat, clockwise: Bool = true) -> CGPoint {
+      let dx = end.x - start.x
+      let dy = end.y - start.y
+      let d = sqrt(dx*dx + dy*dy)
+
+      // No circle possible if distance too large
+    if d > 2 * radius { return CGPoint(x: 0, y: 0) }
+
+      // Midpoint between start and end
+      let mid = CGPoint(x: (start.x + end.x)/2, y: (start.y + end.y)/2)
+
+      // Distance from midpoint to center
+      let h = sqrt(radius*radius - (d/2)*(d/2))
+
+      // Direction perpendicular to AB
+      let ux = -dy / d
+      let uy = dx / d
+
+      // Two possible centers
+      let cx1 = mid.x + h * ux
+      let cy1 = mid.y + h * uy
+
+      let cx2 = mid.x - h * ux
+      let cy2 = mid.y - h * uy
+
+      return clockwise ? CGPoint(x: cx1, y: cy1) : CGPoint(x: cx2, y: cy2)
   }
 }

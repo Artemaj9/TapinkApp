@@ -11,7 +11,7 @@ struct Game: View {
           if let path = vm.gameFieldPath {
               FieldShape(path: path)
                   .fill(.black, style: FillStyle(eoFill: true))      // playable area
-              FieldShape(path: path)
+            FieldShape(path: path)
                   .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
           }
 //          Rectangle()
