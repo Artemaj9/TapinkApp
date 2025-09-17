@@ -52,7 +52,7 @@ final class GameViewModel: ObservableObject {
     //  gameFieldPath = level2PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
   //  gameFieldPath = level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
    // gameFieldPath = level4PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
-    gameFieldPath = level9PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)//level4PlayablePath
+    gameFieldPath = level10PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)//level4PlayablePath
 
       // Inner playable “corridor” bounds (inside walls)
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
@@ -386,6 +386,63 @@ final class GameViewModel: ObservableObject {
 
             return path
   }
+  private func level8PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.closeSubpath()
+      return p
+  }
+  
+  private func level10PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    let height = inner.maxY - inner.minY
+    let width = inner.maxX - inner.minX
+    
+    p.move(to: CGPoint(x: inner.minX  , y: inner.minY + height*0.3))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY - height*0.2))
+    p.addLine(to: CGPoint(x: inner.minX , y: inner.maxY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY - height*0.35))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.3, y: inner.minY + height*0.5))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.minY + height*0.53))
+    p.addLine(to: CGPoint(x: inner.minX  , y: inner.minY + height*0.3))
+
+    p.closeSubpath()
+      return p
+  }
+  
+  
+  func crossShapeLevel10(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
+    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
+    let p = CGMutablePath()
+    let height = inner.maxY - inner.minY
+    let width = inner.maxX - inner.minX
+    let cl = width*0.07
+    let ch = height*0.3
+    p.move(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl , y: inner.minY + height*0.2 + ch))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl + ch , y: inner.minY + height*0.2 + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 + cl, y: inner.minY + height*0.2 + ch + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 , y: inner.minY + height*0.2 + ch + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch + cl))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6 - ch, y: inner.minY + height*0.2 + ch))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2 + ch))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.6, y: inner.minY + height*0.2))
+
+    p.closeSubpath()
+      return p
+  }
+  
   
   func pointInsideField(_ p: CGPoint) -> Bool {
       guard let path = gameFieldPath else { return false }
@@ -407,17 +464,7 @@ final class GameViewModel: ObservableObject {
       ]
   }
   
-  private func level8PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
-    let inner = rect.insetBy(dx: wallWidth, dy: wallWidth)
-    let p = CGMutablePath()
-    p.move(to: CGPoint(x: inner.minX , y: inner.minY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
-    p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
-    p.closeSubpath()
-      return p
-  }
+
   
  
   

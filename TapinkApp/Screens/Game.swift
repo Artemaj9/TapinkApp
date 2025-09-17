@@ -13,6 +13,9 @@ struct Game: View {
                   .fill(.black, style: FillStyle(eoFill: true))      // playable area
             FieldShape(path: path)
                   .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
+            
+            FieldShape(path: vm.crossShapeLevel10(in: vm.gameFieldBounds, wallWidth: 0))
+              .fill(.yellow)
           }
 //          Rectangle()
 //                      .strokeBorder(Color.purple, lineWidth: 4)
