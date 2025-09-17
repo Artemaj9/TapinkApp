@@ -32,6 +32,11 @@ struct Game: View {
                 .fill(Color.purple.opacity(0.8))
                 .frame(width: vm.bonusRect.width, height: vm.bonusRect.height)
                 .position(x: vm.bonusRect.midX, y: vm.bonusRect.midY)
+          
+          Rectangle()
+              .fill(Color.red.opacity(0.8))
+              .frame(width: vm.movingBlockRect.width, height: vm.movingBlockRect.height)
+              .position(x: vm.movingBlockRect.midX, y: vm.movingBlockRect.midY)
             
             // Big circle
             Circle()

@@ -18,7 +18,7 @@ final class GameViewModel: ObservableObject {
   private var startBigPoint: CGPoint = .zero
   
   var radius: CGFloat = 50
-  @Published var currentLevel = 10
+  @Published var currentLevel = 6
       
       let orbitRadius: CGFloat = 30
       private var rotationAngle: CGFloat = 0
@@ -30,6 +30,29 @@ final class GameViewModel: ObservableObject {
   @Published var crossAngle: CGFloat = 0          // animates slowly
   private var crossBasePath: CGPath?              // unrotated cross
   private var crossPivot: CGPoint = .zero
+  
+  
+  // RECT
+  @Published var movingBlockRect: CGRect = .zero
+  private let movingBlockSize: CGFloat = 35
+  private var movingBlockTopY: CGFloat = 0
+  private var movingBlockBottomY: CGFloat = 0
+  private var movingBlockDirection: CGFloat = 1  // +1 down, -1 up
+  private var movingBlockSpeed: CGFloat = 1.6
+  
+  
+  private func updateMovingBlock() {
+      guard currentLevel == 6 else { return }
+      var y = movingBlockRect.midY + movingBlockSpeed * movingBlockDirection
+      if y >= movingBlockBottomY {
+          y = movingBlockBottomY
+          movingBlockDirection = -1
+      } else if y <= movingBlockTopY {
+          y = movingBlockTopY
+          movingBlockDirection = 1
+      }
+      movingBlockRect.origin.y = y - movingBlockRect.height / 2
+  }
       
       // MARK: - Game field
       private(set) var gameField: CGRect = .zero
@@ -68,6 +91,29 @@ final class GameViewModel: ObservableObject {
     let cross = crossShapeLevel10(in: gameFieldBounds, wallWidth: wallWidth)
      crossBasePath = cross.path
      crossPivot    = cross.pivot
+    
+    
+    if currentLevel == 6 {
+        let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
+
+        // fixed X near top-right (like your screenshot); change if you want
+        let x = inner.minX + inner.width * 0.78
+
+        // compute top/bottom Y available along that X inside the path
+        let span = verticalSpan(atX: x) ?? (inner.minY, inner.maxY)
+
+        movingBlockTopY = span.minY + movingBlockSize / 2
+        movingBlockBottomY = span.maxY - movingBlockSize / 2
+        movingBlockDirection = 1
+
+        // start at the top
+        movingBlockRect = CGRect(
+            x: x - movingBlockSize / 2,
+            y: movingBlockTopY - movingBlockSize / 2,
+            width: movingBlockSize,
+            height: movingBlockSize
+        )
+    }
 
       // Inner playable “corridor” bounds (inside walls)
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
@@ -102,6 +148,39 @@ final class GameViewModel: ObservableObject {
       resetGame()
   }
 
+  
+  private func circleIntersectsRect(center: CGPoint, radius: CGFloat, rect: CGRect) -> Bool {
+      // nearest point on rect to the circle center
+      let nx = max(rect.minX, min(center.x, rect.maxX))
+      let ny = max(rect.minY, min(center.y, rect.maxY))
+      let dx = center.x - nx
+      let dy = center.y - ny
+      return dx*dx + dy*dy <= radius*radius
+  }
+  
+
+  
+  
+  private func verticalSpan(atX x: CGFloat, margin: CGFloat = 4) -> (minY: CGFloat, maxY: CGFloat)? {
+      guard let path = gameFieldPath else { return nil }
+      let b = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
+      var first: CGFloat? = nil
+      var last: CGFloat? = nil
+      var y = b.minY
+      // 1pt step is fine (runs once during setup)
+      while y <= b.maxY {
+          if path.contains(CGPoint(x: x, y: y), using: .evenOdd) {
+              first = first ?? y
+              last = y
+          } else if first != nil { break }        // stop at the first continuous segment
+          y += 1
+      }
+      if let f = first, let l = last {
+          return (f + margin, l - margin)
+      }
+      return nil
+  }
+  
 //  func resetGame() {
 //      hasWon = false
 //      prizeCount = 0
@@ -174,7 +253,7 @@ final class GameViewModel: ObservableObject {
           rotationAngle += 0.08
           crossAngle += 0.01
           updateSmallPosition()
-          
+          updateMovingBlock()
           checkLoseCondition()
           checkBonusCollision()
           checkWinCondition()
@@ -241,9 +320,14 @@ final class GameViewModel: ObservableObject {
             intersectsRotatingCross(center: small, radius: 5) {
              resetGame()
          }
-//          if !bigInside || !smallInside {
-//              resetGame()
-//          }
+        
+        if currentLevel == 6 {
+              if circleIntersectsRect(center: big, radius: 10, rect: movingBlockRect) ||
+                 circleIntersectsRect(center: small, radius: 5, rect: movingBlockRect) {
+                  resetGame()
+                  return
+              }
+          }
       }
   
   private func level1PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
