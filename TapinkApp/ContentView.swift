@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  TapinkApp
-//
-//  Created by Artem on 17.09.2025.
-//
-
 import SwiftUI
 
 struct ContentView: View {
