@@ -18,6 +18,8 @@ final class GameViewModel: ObservableObject {
   @Published var currentLevel = 6
   @Published var currentSkin = 1
   @Published var balance = 0
+  
+  @Published var isWin = false
 
   
   @Published var big: CGPoint = .zero
