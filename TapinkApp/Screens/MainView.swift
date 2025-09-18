@@ -45,7 +45,10 @@ struct MainView: View {
         Text("TAP TO MOVE")
           .tapinkFont(size: 21, style: .blackHanSansRegular, color: .white.opacity(0.5))
           .allowsHitTesting(false)
-          .yOffset(vm.h*0.12)
+          .overlayMask {
+            Smoke(effect: "flickerShader")
+              .opacity(0.4)
+          }          .yOffset(vm.h*0.12)
         playbtn
       }
       .onAppear {

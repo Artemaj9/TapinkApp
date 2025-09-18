@@ -30,6 +30,11 @@ float2 c2uv (float2 coord, float2 iResolution) {
   return (coord-iResolution.xy/2.)/mn;
   }
 
+float Hash31(float3 p) {
+  return fract(937.276 * cos(836.826 * p.x + 263.736 * p.y + 374.723 * p.z + 637.839));
+}
+
+
 fragment float4 circleShader(VertexOut in [[stage_in]],
                             constant float &time [[buffer(0)]],
                             constant float2 &iResolution [[buffer(1)]],
@@ -171,8 +176,6 @@ fragment float4 gradShader(VertexOut in [[stage_in]],
   
   float2 m2 = uv - 0.5;
   
-  
-  
   float3 baseColor = computeProceduralColor(uv, time, iResolution);
   if (baseColor.r >= baseColor.g && baseColor.r >= baseColor.b && baseColor.r > 1.0) {
     baseColor.r = 1.0;
@@ -184,4 +187,46 @@ fragment float4 gradShader(VertexOut in [[stage_in]],
   float3 finalColor = baseColor;
   
   return float4(finalColor, 1.0);
+}
+
+fragment float4 flickerShader(VertexOut in [[stage_in]],
+                              constant float &time [[buffer(0)]],
+                              constant float2 &iResolution [[buffer(1)]]) {
+  float2 uv = in.texCoord - 0.5;
+  uv.x *= iResolution.x / iResolution.y;
+  
+  float adjustedTime = time * 8.0;
+  float3 color = float3(0.0);
+  
+  for (float i = -3.0; i <= 3.0; i += 1.25) {
+    for (float j = -2.0; j <= 2.0; j += 1.25) {
+      float2 p = uv;
+      
+      float freq = fract(643.376 * cos(264.863 * i + 136.937)) + 1.0;
+      float2 pos = 5.0 * float2(i, j) + float2(sin(freq * (adjustedTime + 10.0 * j) - i), freq * adjustedTime);
+      pos.y = fmod(pos.y + 15.0, 30.0) - 15.0;
+      pos.x *= 0.1 * pos.y + 1.0;
+      p -= 0.2 * pos;
+      
+      float an = fmod(atan2(p.y, p.x) + 6.2831 / 3.0, 6.2831 / 6.0) - 6.2831 / 3.0;
+      p = float2(cos(an), sin(an)) * length(p);
+      
+      float sec = floor(adjustedTime);
+      float frac = fract(adjustedTime);
+      float flicker = mix(Hash31(float3(i, j, sec)), Hash31(float3(i, j, sec + 1.0)), frac);
+      
+      float rad = 25.0 + 20.0 * flicker;
+      float br = 250.0 * pow(1.0 / max(10.0, rad * (sqrt(abs(p.x)) + sqrt(abs(p.y))) + 0.9), 2.5);
+      float rand = fract(847.384 * cos(483.846 * i + 737.487 * j + 264.836));
+      if (rand > 0.5) {
+        color += mix(float3(br, 0.4 * br, 0.0), float3(1.0), br);
+      } else {
+        color += mix(float3(0.0, 0.0, 0.6 * br), float3(1.0), br);
+      }
+      
+      color *= 0.955 + 0.1 * flicker;
+    }
+  }
+  
+  return float4(color, 1.0);
 }

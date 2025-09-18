@@ -11,15 +11,14 @@ final class GameViewModel: ObservableObject {
   // MARK: - Modes
   enum SceneMode { case menu, game }
   @Published var mode: SceneMode = .menu
-  // Screen bounds for menu
   private(set) var screenRect: CGRect = .zero
   private var menuStartBig: CGPoint = .zero
-  
-  
   @Published var openLevels = Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
-  
-  @Published var balance = 0
+  @Published var openSkins = Array(repeating: true, count: 2) +  Array(repeating: false, count: 8)
+  @Published var currentLevel = 6
   @Published var currentSkin = 1
+  @Published var balance = 0
+
   
   @Published var big: CGPoint = .zero
   @Published var small: CGPoint = .zero
@@ -34,7 +33,6 @@ final class GameViewModel: ObservableObject {
   @Published var radius: CGFloat = 490
   @Published var bigrad: CGFloat = 25
   @Published var smallrad: CGFloat = 15
-  @Published var currentLevel = 6
   @Published var isMenu = false
   
   let orbitRadius: CGFloat = 50

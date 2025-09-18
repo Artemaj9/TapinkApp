@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "balllogo.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
