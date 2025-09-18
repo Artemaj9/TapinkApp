@@ -15,9 +15,7 @@ struct MainView: View {
           .animation(.linear(duration: 0.1), vm.loseAnimation)
           .position(vm.big)
           .animation(.linear(duration: 0.1), vm.big)
-       
-        //  .animation(vm.big)
-        
+               
         
         Image(.moon)
           .resizableToFit(height: 2*vm.smallrad)
@@ -55,9 +53,7 @@ struct MainView: View {
                  vm.setMenuScene(size: vm.size)
                  vm.startGameLoop()      // reuses the same timer; tick routes to menu
              }
-             .onDisappear {
-                 vm.stopGameLoop()
-             }
+            
       .addNavigationRoutes(path: $nm.path)
     }
   

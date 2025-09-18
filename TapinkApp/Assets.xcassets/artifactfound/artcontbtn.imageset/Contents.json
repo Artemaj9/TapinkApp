@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "artcontbtn.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

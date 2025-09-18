@@ -19,17 +19,24 @@ struct Game: View {
         FieldShape(path: cross)
           .fill(.red.opacity(0.4))
       }
+      
       // Portal
-      Rectangle()
-        .fill(Color.yellow.opacity(0.8))
-        .frame(width: vm.portalRect.width, height: vm.portalRect.height)
+      ZStack {
+//        Rectangle()
+//          .fill(Color.yellow.opacity(0.8))
+//          .frame(width: vm.portalRect.width, height: vm.portalRect.height)
+            Image(.wirl)
+          .resizableToFit(height: 1.7*vm.portalRect.height)
+      }
         .position(x: vm.portalRect.midX, y: vm.portalRect.midY)
       
       // Bonus
-      Rectangle()
-        .fill(Color.purple.opacity(0.8))
-        .frame(width: vm.bonusRect.width, height: vm.bonusRect.height)
+   
+        Image(.prizebox)
+          .resizableToFit(height: vm.bonusRect.height*2.3)
         .position(x: vm.bonusRect.midX, y: vm.bonusRect.midY)
+        .transparentIf(vm.openSkins[vm.currentLevel - 1] || vm.isArtifact)
+        .animation(vm.isArtifact)
       
       Rectangle()
         .fill(Color.red.opacity(0.8))
@@ -37,34 +44,46 @@ struct Game: View {
         .position(x: vm.movingBlockRect.midX, y: vm.movingBlockRect.midY)
       
       // Big circle
-      Circle()
-        .fill(Color.blue)
-        .frame(width: 20, height: 20)
+      Image("ball\(vm.currentSkin)")
+        .resizableToFit(height: 40)
+        .scaleEffect(1 + 0.7*vm.loseAnimation)
         .position(vm.big)
+        .brightness(vm.loseAnimation == 1 ? 1 : 0)
+        .opacity(1 - Double(vm.loseAnimation))
+        .animation(.linear(duration: 0.1), vm.loseAnimation)
+        .animation(.linear(duration: 0.1), vm.big)
       
       
-      Circle()
-        .fill(Color.red)
-        .frame(width: 10, height: 10)
+      Image(.moon)
+        .resizableToFit(height: 30)
         .position(vm.small)
         .animation(vm.showSmall)
+        .transparentIf(vm.hasWon)
       
       // Score / Win overlay
-      VStack {
-        HStack {
-          Text("🎁 \(vm.prizeCount)")
-            .foregroundColor(.white)
-            .padding()
-          Spacer()
+     
+        
+          ZStack {
+            if vm.hasWon {
+              Win()
+            }
         }
-        Spacer()
-        if vm.hasWon {
-          Text("YOU WIN!")
-            .font(.largeTitle)
-            .foregroundColor(.green)
-            .padding()
+          .transparentIfNot(vm.hasWon)
+          .animation(vm.hasWon)
+      
+      HStack {
+        Button {
+          vm.isFreeze = true
+          vm.freezeTime = 19
+        } label: {
+          Image(.freezebtn)
+            .resizableToFit(height: 65)
         }
+        .disabled(vm.isFreeze)
+        .shadow(color: Color("#C8FFFC").opacity(vm.isFreeze ? 1 : 0), radius: 24)
+        .animation(vm.isFreeze)
       }
+      .yOffset(vm.footer)
     }
     .onAppear {
       let bounds = CGRect(origin: .zero, size: vm.size)

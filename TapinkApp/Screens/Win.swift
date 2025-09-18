@@ -45,7 +45,20 @@ struct Win: View {
               Text("")
             }
             .width(vm.w*0.7)
+            
+            Image(.winmoneybg)
+              .resizableToFit(height: 32)
+              .overlay(.leading) {
+                Image(.coin)
+                  .resizableToFit(height: 32)
+              }
+              .overlay {
+                Text("9999")
+                  .tapinkFont(size: 21, style: .blackHanSansRegular, color: .white)
+              }
+              .padding(.top, 20)
           }
+          .yOffset(30)
         }
         .hPadding()
         .yOffset(-vm.h*0.07)
@@ -90,9 +103,21 @@ struct Win: View {
       }
       .hPadding(30)
       .yOffset(vm.footer)
+      
+      artefactScreen
     }
     .ignoresSafeArea()
 
+  }
+  
+  private var artefactScreen: some View {
+    ZStack {
+      if vm.artifactScreenShown {
+        ArtifactFound()
+      }
+    }
+    .transparentIfNot(vm.artifactScreenShown)
+    .animation(vm.artifactScreenShown)
   }
 }
 

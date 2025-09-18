@@ -1,25 +1,36 @@
 import Combine
 import SwiftUI
-import func AVFoundation.AVMakeRect
 
 final class GameViewModel: ObservableObject {
   @Published var size: CGSize = .init(width: 393, height: 851)
   @Published var route: Route = .splash
-  @AppStorage("isWelcome") var isWelcome = true
   private var cancellables = Set<AnyCancellable>()
+  private var freezecancellables = Set<AnyCancellable>()
+
   
   // MARK: - Modes
   enum SceneMode { case menu, game }
   @Published var mode: SceneMode = .menu
   private(set) var screenRect: CGRect = .zero
   private var menuStartBig: CGPoint = .zero
-  @Published var openLevels = Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
-  @Published var openSkins = Array(repeating: true, count: 2) +  Array(repeating: false, count: 8)
-  @Published var currentLevel = 6
+  @Published var openLevels = Array(repeating: false, count: 10)
+  //Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
+  @Published var openSkins = Array(repeating: false, count: 10)
+  @Published var currentLevel = 1
   @Published var currentSkin = 1
   @Published var balance = 0
+  @Published var freezeTime: Double = 10
+  
+  @Published var isFreeze = false
+  @Published var isImmortal = false
   
   @Published var isWin = false
+  
+  // GAMESTATS
+  @Published var moves = 30
+  @Published var time = 300
+  @Published var isArtifact = false
+  @Published var artifactScreenShown = false
 
   
   @Published var big: CGPoint = .zero
@@ -32,7 +43,7 @@ final class GameViewModel: ObservableObject {
   private var startBigPoint: CGPoint = .zero
   @Published var loseAnimation: CGFloat = 0
   
-  @Published var radius: CGFloat = 490
+//  @Published var radius: CGFloat = 490
   @Published var bigrad: CGFloat = 25
   @Published var smallrad: CGFloat = 15
   @Published var isMenu = false
@@ -45,7 +56,7 @@ final class GameViewModel: ObservableObject {
   private var crossBasePath: CGPath?              // unrotated cross
   private var crossPivot: CGPoint = .zero
   
-  // RECT
+  // RECT MOVINGBLOCK
   @Published var movingBlockRect: CGRect = .zero
   private let movingBlockSize: CGFloat = 35
   private var movingBlockTopY: CGFloat = 0
@@ -69,19 +80,74 @@ final class GameViewModel: ObservableObject {
   // MARK: - Game field
   private(set) var gameField: CGRect = .zero
   private(set) var gameFieldPath: CGPath?
-  private(set) var gameFieldBounds: CGRect = .zero
-  // <- the playable shape (even-odd)
-  
-  // thickness of the purple "walls"
+  private(set) var gameFieldBounds: CGRect = .zero  
   var wallWidth: CGFloat = 4
-  var portalRect: CGRect = .zero
-  var bonusRect: CGRect = .zero
+  @Published var portalRect: CGRect = .zero
+  @Published var bonusRect: CGRect = .zero
+  
+  func getLevelPath() -> CGPath {
+    switch currentLevel {
+    case 1: return  level1PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 2: return  level2PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 3: return  level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 4: return  level4PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 5: return  level5PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 6: return  level6PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 7: return  level7PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 8: return  level8PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 9: return  level9PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    case 10: return  level10PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    default: return  level1PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
+    }
+  }
+  func getPortalRect()  -> CGRect {
+    let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
+    let portalSize = CGSize(width: 50, height: 50)
+    let portalMargin: CGFloat = 24
+    switch currentLevel {
+    case 1:
+      return  CGRect(
+        x: inner.minX + inner.width*0.7,
+        y: inner.maxY - portalSize.height - inner.height*0.15,
+        width: portalSize.width,
+        height: portalSize.height
+      )
+    default:
+      return  CGRect(
+      x: inner.minX + inner.width*0.7,
+      y: inner.maxY - portalSize.height - inner.height*0.3,
+      width: portalSize.width,
+      height: portalSize.height
+    )
+    }
+  }
+  
+  func getBonusRect() -> CGRect {
+    let bonusSize = CGSize(width: 40, height: 40)
+    let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
+
+    switch currentLevel {
+    case 1: return CGRect(
+      x: inner.midX - bonusSize.width / 2 + inner.width*0.2,
+      y: inner.midY - bonusSize.height / 2 - inner.height*0.2,
+      width: bonusSize.width,
+      height: bonusSize.height
+    )
+      
+    default: return CGRect(
+      x: inner.midX - bonusSize.width / 2,
+      y: inner.midY - bonusSize.height / 2,
+      width: bonusSize.width,
+      height: bonusSize.height
+    )
+    }
+  }
   
   func setGameField(size: CGSize) {
     let fieldWidth = size.width //size.width * 0.9 // level 4
     let fieldHeight = size.height * 0.7
     let center = CGPoint(x: size.width / 2, y: size.height / 2)
-    
+    mode = .game
     gameFieldBounds = CGRect(
       x: center.x - fieldWidth / 2,
       y: center.y - fieldHeight / 2,
@@ -89,19 +155,15 @@ final class GameViewModel: ObservableObject {
       height: fieldHeight
     )
     
-    // Build Level 2 shape
-    //  gameFieldPath = level2PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
-    //  gameFieldPath = level3PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
-    // gameFieldPath = level4PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
-    gameFieldPath = level10PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)//level4PlayablePath
-    let cross = crossShapeLevel10(in: gameFieldBounds, wallWidth: wallWidth)
-    crossBasePath = cross.path
-    crossPivot    = cross.pivot
-    
+    gameFieldPath =  getLevelPath()
+    if currentLevel == 10 {
+      let cross = crossShapeLevel10(in: gameFieldBounds, wallWidth: wallWidth)
+      crossBasePath = cross.path
+      crossPivot    = cross.pivot
+    }
     
     if currentLevel == 6 {
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
-      
       // fixed X near top-right (like your screenshot); change if you want
       let x = inner.minX + inner.width * 0.78
       
@@ -111,8 +173,6 @@ final class GameViewModel: ObservableObject {
       movingBlockTopY = span.minY + movingBlockSize / 2
       movingBlockBottomY = span.maxY - movingBlockSize / 2
       movingBlockDirection = 1
-      
-      // start at the top
       movingBlockRect = CGRect(
         x: x - movingBlockSize / 2,
         y: movingBlockTopY - movingBlockSize / 2,
@@ -128,32 +188,15 @@ final class GameViewModel: ObservableObject {
     
     // 1) Big circle starts at the upper/top area (tweak offset if you like)
     let startOffset: CGFloat = 160
-    startBigPoint = CGPoint(x: inner.minX + 3*startOffset, y: inner.minY + startOffset)
+    startBigPoint = getBigPoint()
     
-    // 2) Portal fixed near the left-bottom area
-    //    (kept safely inside walls by a margin)
-    let portalSize = CGSize(width: 50, height: 50)
-    let portalMargin: CGFloat = 24
-    portalRect = CGRect(
-      x: inner.minX + portalMargin,
-      y: inner.maxY - portalSize.height - portalMargin,
-      width: portalSize.width,
-      height: portalSize.height
-    )
+    // 2) Portal
+    portalRect = getPortalRect()
     
     // 3) Bonus fixed at the center (no randomness)
-    let bonusSize = CGSize(width: 40, height: 40)
-    bonusRect = CGRect(
-      x: inner.midX - bonusSize.width / 2,
-      y: inner.midY - bonusSize.height / 2,
-      width: bonusSize.width,
-      height: bonusSize.height
-    )
-    
-    // Now reset to use these fixed placements
+    bonusRect = getBonusRect()
     resetGame()
   }
-  
   
   private func circleIntersectsRect(center: CGPoint, radius: CGFloat, rect: CGRect) -> Bool {
     // nearest point on rect to the circle center
@@ -170,12 +213,11 @@ final class GameViewModel: ObservableObject {
     var first: CGFloat? = nil
     var last: CGFloat? = nil
     var y = b.minY
-    // 1pt step is fine (runs once during setup)
     while y <= b.maxY {
       if path.contains(CGPoint(x: x, y: y), using: .evenOdd) {
         first = first ?? y
         last = y
-      } else if first != nil { break }        // stop at the first continuous segment
+      } else if first != nil { break }
       y += 1
     }
     if let f = first, let l = last {
@@ -184,57 +226,25 @@ final class GameViewModel: ObservableObject {
     return nil
   }
   
-  //  func resetGame() {
-  //      hasWon = false
-  //      prizeCount = 0
-  //      rotationAngle = 0
-  //
-  //      // Use the fixed start point set in `setGameField`
-  //      big = startBigPoint
-  //      updateSmallPosition()
-  //  }
+  func getBigPoint() -> CGPoint {
+    switch currentLevel {
+    case 1: return CGPoint(x: gameFieldBounds.minX + gameFieldBounds.width*0.18, y: gameFieldBounds.minY + gameFieldBounds.height*0.2)
+    default: return CGPoint(x: gameFieldBounds.minX, y: gameFieldBounds.minY)
+    }
+  }
   
-  // MARK: - Setup
-  //     func setGameField(size: CGSize) {
-  //        let fieldWidth = size.width * 0.9
-  //        let fieldHeight = size.height * 0.7
-  //        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-  //
-  //        gameField = CGRect(
-  //            x: center.x - fieldWidth / 2,
-  //            y: center.y - fieldHeight / 2,
-  //            width: fieldWidth,
-  //            height: fieldHeight
-  //        )
-  //
-  //        // Portal at bottom center of field
-  //        portalRect = CGRect(
-  //            x: gameField.midX - 25,
-  //            y: gameField.maxY - 80,
-  //            width: 50,
-  //            height: 50
-  //        )
-  //
-  //        // Bonus in the middle
-  //        bonusRect = CGRect(
-  //            x: gameField.midX - 20,
-  //            y: gameField.midY - 20,
-  //            width: 40,
-  //            height: 40
-  //        )
-  //
-  //        resetGame()
-  //    }
   
   func resetGame() {
     hasWon = false
-    prizeCount = 0
+    isArtifact = false
+    artifactScreenShown = false
     rotationAngle = 0
-//    loseAnimation = 1
-    big = CGPoint(x: gameFieldBounds.midX, y: gameFieldBounds.midY)
-    
- //   big = CGPoint(x: gameFieldBounds.midX + gameFieldBounds.width*0.3, y: gameFieldBounds.minY + 40)
+    loseAnimation = 0
+    big = getBigPoint()
     updateSmallPosition()
+    freezeTime = 10
+
+ //   big = CGPoint(x: gameFieldBounds.midX + gameFieldBounds.width*0.3, y: gameFieldBounds.minY + 40)
     //  stopGameLoop()
   }
   
@@ -291,54 +301,53 @@ final class GameViewModel: ObservableObject {
   }
   
   private func checkWinCondition() {
-    if portalRect.contains(small) {
-      hasWon = true
+    if portalRect.contains(small) || portalRect.contains(big) {
+  
       withAnimation {
         big = CGPoint(x: portalRect.midX, y: portalRect.midY)
+        small = big
       }
-      small = big
+      
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+        if let self {
+          hasWon = true
+          self.artifactScreenShown = self.isArtifact
+        }
+      }
     }
   }
   
   private func checkBonusCollision() {
     if bonusRect.contains(small) || bonusRect.contains(big) {
-      prizeCount += 1
-      // respawn inside game field
-      bonusRect.origin = CGPoint(
-        x: CGFloat.random(in: gameFieldBounds.minX...(gameFieldBounds.maxX - bonusRect.width)),
-        y: CGFloat.random(in: gameFieldBounds.minY...(gameFieldBounds.maxY - bonusRect.height))
-      )
+      isArtifact = true
     }
   }
   
   private func checkLoseCondition() {
     // circles must stay strictly inside the field
-    //   let bigInside = gameField.contains(big)
-    // let smallInside = gameField.contains(small)
-//    let bigInside = pointInsideField(big)
-//    let smallInside = pointInsideField(small) || currentLevel == 9
+   //    let bigInside = gameField.contains(big)
+     //let smallInside = gameField.contains(small)
+    let bigInside = pointInsideField(big)
+    let smallInside = pointInsideField(small) || currentLevel == 9
 //    if !bigInside || !smallInside {
 //      resetGame()
 //    }
     
-    let bigInside   = circleInsideField(center: big, radius: bigrad)
-      let smallInside = (currentLevel == 9)
-            ? true
-    : circleInsideField(center: small, radius: smallrad)
+//    let bigInside   = circleInsideField(center: big, radius: bigrad)
+//      let smallInside = (currentLevel == 9)
+//            ? true
+//    : circleInsideField(center: small, radius: smallrad)
 
         if !bigInside || !smallInside {
           loseAnimation = 1
-          DispatchQueue.main.asyncAfter(deadline: .now() +  1) { [weak self] in
+          DispatchQueue.main.asyncAfter(deadline: .now() +  0.2) { [weak self] in
             self?.resetGame()
           }
           return
         }
-    
-    
-    
-    
-    if intersectsRotatingCross(center: big, radius: 10) ||
-        intersectsRotatingCross(center: small, radius: 5) {
+
+    if (intersectsRotatingCross(center: big, radius: 10) ||
+        intersectsRotatingCross(center: small, radius: 5)) && currentLevel == 10 {
       resetGame()
     }
     
@@ -398,7 +407,7 @@ final class GameViewModel: ObservableObject {
     return corners.allSatisfy { pointInsideField($0) }
   }
   
-  
+  // MARK: CROSS
   func rotatedCrossPath() -> CGPath? {
     guard let base = crossBasePath else { return nil }
     var t = CGAffineTransform.identity
@@ -410,7 +419,7 @@ final class GameViewModel: ObservableObject {
   
   func pointInsideCross(_ p: CGPoint) -> Bool {
     guard let path = rotatedCrossPath() else { return false }
-    return path.contains(p) // filled cross
+    return path.contains(p)
   }
   
   private func intersectsRotatingCross(center: CGPoint, radius: CGFloat) -> Bool {
@@ -426,126 +435,36 @@ final class GameViewModel: ObservableObject {
   func hideSplash() {
     route = .mainScreen
   }
-  
-  // MARK: - Layout
-  var h: CGFloat {
-    size.height
-  }
-  
-  var w: CGFloat {
-    size.width
-  }
-  
-  var header: CGFloat {
-    isSEight ? -size.height * 0.4 + 52 : -size.height * 0.4
-  }
-  
-  var footer: CGFloat {
-    isSEight ? size.height*0.41 - 60 : size.height*0.41
-  }
-  
-  var isEightPlus: Bool {
-    return size.width > 405 && size.height < 910 && size.height > 880
-    && UIDevice.current.name != "iPhone 11 Pro Max"
-  }
-  
-  var isElevenProMax: Bool {
-    UIDevice.current.name == "iPhone 11 Pro Max"
-  }
-  
-  var isIpad: Bool {
-    UIDevice.current.name.contains("iPad")
-  }
-  
-  var isSE: Bool {
-    return size.width < 380
-  }
-  
-  var isSEight: Bool {
-    return isSE || isEightPlus
-  }
-}
 
-extension CGPoint {
-  func distance(to point: CGPoint) -> CGFloat {
-    let dx = point.x - x
-    let dy = point.y - y
-    return sqrt(dx*dx + dy*dy)
-  }
-}
-
-extension CGMutablePath {
-  func addArcBetween(start: CGPoint, end: CGPoint, radius: CGFloat, clockwise: Bool = true) {
-      let dx = end.x - start.x
-      let dy = end.y - start.y
-      let d = sqrt(dx*dx + dy*dy)
-
-      guard d <= 2 * radius else {
-          self.move(to: start)
-          self.addLine(to: end)
-          return
+  private func tickGame() {
+    guard mode == .game, !hasWon, !isRotationPaused, !artifactScreenShown else { return }
+    rotationAngle += isFreeze ? 0.04 : 0.08
+    crossAngle += 0.01
+    updateSmallPosition()
+    updateMovingBlock()
+    checkLoseCondition()
+    if !openSkins[currentLevel - 1] && !isArtifact {
+      checkBonusCollision()
+    }
+    if isFreeze {
+      freezeTime -= 0.016
+      if freezeTime <= 0 {
+        isFreeze = false
+        freezeTime = 10
       }
-
-      let mid = CGPoint(x: (start.x + end.x)/2, y: (start.y + end.y)/2)
-      let h = sqrt(max(0, radius*radius - (d/2)*(d/2)))
-
-      let ux = dx / d
-      let uy = dy / d
-
-      let px = -uy
-      let py = ux
-
-      let c1 = CGPoint(x: mid.x + h * px, y: mid.y + h * py)
-      let c2 = CGPoint(x: mid.x - h * px, y: mid.y - h * py)
-
-      let center: CGPoint
-      let angle1 = atan2(start.y - c1.y, start.x - c1.x)
-      let angle2 = atan2(end.y - c1.y, end.x - c1.x)
-      let delta = angle2 - angle1
-
-      let normalizedDelta = atan2(sin(delta), cos(delta))
-      let isClockwiseFromC1 = normalizedDelta < 0
-
-      if clockwise == isClockwiseFromC1 {
-          center = c1
-      } else {
-          center = c2
-      }
-
-      let startAngle =  Double(atan2(start.y - center.y, start.x - center.x))
-      let endAngle   =  Double(atan2(end.y - center.y, end.x - center.x))
-
-      self.move(to: start)
-      self.addArc(center: center,
-                  radius: radius,
-                  startAngle: startAngle,
-                  endAngle: endAngle,
-                  clockwise: clockwise)
+    }
+    
+    checkWinCondition()
   }
   
-  func circleCenter(start: CGPoint, end: CGPoint, radius: CGFloat, clockwise: Bool = true) -> CGPoint {
-      let dx = end.x - start.x
-      let dy = end.y - start.y
-      let d = sqrt(dx*dx + dy*dy)
-
-    if d > 2 * radius { return CGPoint(x: 0, y: 0) }
-      let mid = CGPoint(x: (start.x + end.x)/2, y: (start.y + end.y)/2)
-      let h = sqrt(radius*radius - (d/2)*(d/2))
-
-      let ux = -dy / d
-      let uy = dx / d
-
-      let cx1 = mid.x + h * ux
-      let cy1 = mid.y + h * uy
-
-      let cx2 = mid.x - h * ux
-      let cy2 = mid.y - h * uy
-
-      return clockwise ? CGPoint(x: cx1, y: cy1) : CGPoint(x: cx2, y: cy2)
+  private func tick() {
+    switch mode {
+    case .menu: tickMenu()
+    case .game: tickGame()
+    }
   }
 }
 
-private extension CGRect { var center: CGPoint { .init(x: midX, y: midY) } }
 
 extension GameViewModel {
   func circleInsideField(center: CGPoint, radius: CGFloat) -> Bool {
@@ -558,6 +477,7 @@ extension GameViewModel {
       return !halo.contains(center)
   }
 }
+
 
 // MENU SETUP
 extension GameViewModel {
@@ -578,7 +498,7 @@ extension GameViewModel {
   }
 
   // Only used by menu
-  private func resetMenu() {
+ func resetMenu() {
       big =  CGPoint(x: screenRect.midX, y: screenRect.midY)
       rotationAngle = 0
      loseAnimation = 0
@@ -615,29 +535,13 @@ extension GameViewModel {
   }
 
   
-  private func tickGame() {
-    guard mode == .game, !hasWon, !isRotationPaused else { return }
-    rotationAngle += 0.08
-    crossAngle += 0.01
-    updateSmallPosition()
-    updateMovingBlock()
-    checkLoseCondition()
-    checkBonusCollision()
-    checkWinCondition()
-  }
+
   
-  private func tick() {
-    switch mode {
-    case .menu: tickMenu()
-    case .game: tickGame()
-    }
-  }
-  
-  private func circleInsideScreen(center: CGPoint, radius: CGFloat) -> Bool {
+func circleInsideScreen(center: CGPoint, radius: CGFloat) -> Bool {
       screenRect.insetBy(dx: radius, dy: radius).contains(center)
   }
 
-  private func checkLoseConditionMenu() {
+func checkLoseConditionMenu() {
       guard mode == .menu else { return }
 
       let bigOK   = circleInsideScreen(center: big,   radius: bigrad)   // e.g. 10
@@ -652,3 +556,6 @@ extension GameViewModel {
       }
   }
 }
+
+let timings = [20, 20, 30, 30, 30, 45, 45, 45, 45, 45]
+let taps = [10, 10, 15, 15, 15, 15, 15, 10, 20, 20, 20]

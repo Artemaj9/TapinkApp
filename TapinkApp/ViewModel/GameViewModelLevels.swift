@@ -8,7 +8,7 @@ extension GameViewModel {
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
     p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.minY))
     p.closeSubpath()
     return p
   }
