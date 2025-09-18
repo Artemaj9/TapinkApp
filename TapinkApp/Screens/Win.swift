@@ -20,14 +20,18 @@ struct Win: View {
               Text("Moves Left:")
                 .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
               Spacer()
-              Text("")
+              Text("+\(vm.tapCount*50)")
+                .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
+
+              
             }
             .width(vm.w*0.7)
             HStack {
               Text("Time:")
                 .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
               Spacer()
-              Text("")
+              Text( vm.gameTime > 0.7*Double(timings[vm.currentLevel - 1]) ? "+500" : "+250")
+                .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
             }
             .width(vm.w*0.7)
             
@@ -35,14 +39,17 @@ struct Win: View {
               Text("Artifact:")
                 .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
               Spacer()
-              Text("")
+              Text(vm.isArtifact ? "+1000":  "0")
+                .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
+
             }
             .width(vm.w*0.7)
             HStack {
               Text("Total Score:")
                 .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
               Spacer()
-              Text("")
+              Text("+\(getbank())")
+                .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
             }
             .width(vm.w*0.7)
             
@@ -53,10 +60,16 @@ struct Win: View {
                   .resizableToFit(height: 32)
               }
               .overlay {
-                Text("9999")
+                Text("\(vm.balance)")
                   .tapinkFont(size: 21, style: .blackHanSansRegular, color: .white)
               }
               .padding(.top, 20)
+              .onAppear {
+                vm.balance += getbank()
+                if vm.currentLevel < 10 {
+                  vm.openLevels[vm.currentLevel] = true
+                }
+              }
           }
           .yOffset(30)
         }
@@ -118,6 +131,22 @@ struct Win: View {
     }
     .transparentIfNot(vm.artifactScreenShown)
     .animation(vm.artifactScreenShown)
+  }
+  
+  func getbank() -> Int {
+    var total = 0
+    if vm.isArtifact {
+      total += 1000
+    }
+    total += vm.tapCount*50
+    
+    if vm.gameTime > 0.7*Double(timings[vm.currentLevel - 1]) {
+      total += 500
+    } else {
+      total += 250
+    }
+
+    return total
   }
 }
 

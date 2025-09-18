@@ -16,7 +16,7 @@ final class GameViewModel: ObservableObject {
   @Published var openLevels = Array(repeating: false, count: 10)
   //Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
   @Published var openSkins = Array(repeating: false, count: 10)
-  @Published var currentLevel = 1
+  @Published var currentLevel = 3
   @Published var currentSkin = 1
   @Published var balance = 0
 
@@ -53,7 +53,7 @@ final class GameViewModel: ObservableObject {
   @Published var smallrad: CGFloat = 15
   @Published var isMenu = false
   
-  let orbitRadius: CGFloat = 50
+  let orbitRadius: CGFloat = 45
   private var rotationAngle: CGFloat = 0
   private var timerCancellable: AnyCancellable?
   private var isRotationPaused = false
@@ -117,6 +117,21 @@ final class GameViewModel: ObservableObject {
         width: portalSize.width,
         height: portalSize.height
       )
+      
+    case 2:
+      return  CGRect(
+        x: inner.midX,
+        y: inner.maxY - portalSize.height - inner.height*0.1,
+        width: portalSize.width,
+        height: portalSize.height
+      )
+      
+    case 3: return CGRect(
+      x: inner.maxX - inner.width*0.15,
+      y: inner.maxY - portalSize.height - inner.height*0.1,
+      width: portalSize.width,
+      height: portalSize.height
+    )
     default:
       return  CGRect(
       x: inner.minX + inner.width*0.7,
@@ -139,6 +154,20 @@ final class GameViewModel: ObservableObject {
       height: bonusSize.height
     )
       
+    case 2: return CGRect(
+      x: inner.midX - bonusSize.width / 2 + inner.width*0.25,
+      y: inner.midY - bonusSize.height / 2,
+      width: bonusSize.width,
+      height: bonusSize.height
+    )
+      
+    case 3: return CGRect(
+      x: inner.midX - bonusSize.width / 2 + inner.width*0.35,
+      y: inner.minY - bonusSize.height / 2 + inner.height*0.05,
+      width: bonusSize.width,
+      height: bonusSize.height
+    )
+      
     default: return CGRect(
       x: inner.midX - bonusSize.width / 2,
       y: inner.midY - bonusSize.height / 2,
@@ -149,8 +178,8 @@ final class GameViewModel: ObservableObject {
   }
   
   func setGameField(size: CGSize) {
-    let fieldWidth = size.width //size.width * 0.9 // level 4
-    let fieldHeight = size.height * 0.7
+    let fieldWidth =  size.width * 0.9 //size.width // level 4
+    let fieldHeight = size.height * 0.65
     let center = CGPoint(x: size.width / 2, y: size.height / 2)
     mode = .game
     gameFieldBounds = CGRect(
@@ -234,6 +263,8 @@ final class GameViewModel: ObservableObject {
   func getBigPoint() -> CGPoint {
     switch currentLevel {
     case 1: return CGPoint(x: gameFieldBounds.minX + gameFieldBounds.width*0.18, y: gameFieldBounds.minY + gameFieldBounds.height*0.2)
+    case 2: return CGPoint(x: gameFieldBounds.minX + gameFieldBounds.width*0.2, y: gameFieldBounds.minY + gameFieldBounds.height*0.15)
+    case 3: return CGPoint(x: gameFieldBounds.midX , y: gameFieldBounds.minY + gameFieldBounds.height*0.15)
     default: return CGPoint(x: gameFieldBounds.minX, y: gameFieldBounds.minY)
     }
   }
@@ -294,8 +325,12 @@ final class GameViewModel: ObservableObject {
     updateSmallPosition()
     
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-      self?.isRotationPaused = false
-      self?.showSmall = true
+      if let self {
+        if !self.hasWon {
+          self.isRotationPaused = false
+          self.showSmall = true
+        }
+      }
     }
   }
   
@@ -312,7 +347,8 @@ final class GameViewModel: ObservableObject {
   
       withAnimation {
         big = CGPoint(x: portalRect.midX, y: portalRect.midY)
-        small = big
+        small = CGPoint(x: portalRect.midX, y: portalRect.midY)
+        showSmall = false
       }
       
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in

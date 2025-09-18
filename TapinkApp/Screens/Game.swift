@@ -7,10 +7,40 @@ struct Game: View {
   var body: some View {
     ZStack {
       // Background
-      Color.black.ignoresSafeArea()
+      Color("#35084E").ignoresSafeArea()
+    
+     // Color.black.ignoresSafeArea()
+      HStack {
+        Image(.balancebggame)
+          .resizableToFit(height: 28)
+          .overlay(.leading) {
+            Image(.coin)
+              .resizableToFit(height: 32)
+          }
+          .overlay {
+            Text("\(vm.balance)")
+              .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
+            
+          }
+        Spacer()
+        Button {
+          nm.path = []
+          vm.resetGame()
+        } label: {
+          Image(.xbtn)
+            .resizableToFit(height: 40)
+        }
+      }
+      .yOffset(vm.header)
+      .hPadding(30)
+      
       if let path = vm.gameFieldPath {
-        FieldShape(path: path)
-          .fill(.black, style: FillStyle(eoFill: true))      // playable area
+            FieldShape(path: path)
+         .fill(ImagePaint(image: .init(.gamefieldbg)), style: FillStyle(eoFill: true))
+
+          
+      
+          // playable area
         FieldShape(path: path)
           .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
       }
@@ -22,9 +52,7 @@ struct Game: View {
       
       // Portal
       ZStack {
-//        Rectangle()
-//          .fill(Color.yellow.opacity(0.8))
-//          .frame(width: vm.portalRect.width, height: vm.portalRect.height)
+
             Image(.wirl)
           .resizableToFit(height: 1.7*vm.portalRect.height)
       }
@@ -55,10 +83,11 @@ struct Game: View {
       
       
       Image(.moon)
-        .resizableToFit(height: 30)
-        .position(vm.small)
+        .resizableToFit(height: 25)
         .animation(vm.showSmall)
         .transparentIf(vm.hasWon)
+        .position(vm.small)
+   
       
       // Score / Win overlay
      
