@@ -7,7 +7,6 @@ struct MainView: View {
       ZStack {
        bg
         
-        
         Image("ball\(vm.currentSkin)")
           .resizableToFit(height: 2*vm.bigrad)
           .scaleEffect(1 + 0.7*vm.loseAnimation)

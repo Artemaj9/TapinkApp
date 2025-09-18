@@ -15,6 +15,9 @@ final class GameViewModel: ObservableObject {
   private(set) var screenRect: CGRect = .zero
   private var menuStartBig: CGPoint = .zero
   
+  
+  @Published var openLevels = Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
+  
   @Published var balance = 0
   @Published var currentSkin = 1
   
