@@ -63,18 +63,19 @@ struct Game: View {
       // Score / Win overlay
      
         
-          ZStack {
-            if vm.hasWon {
-              Win()
-            }
-        }
-          .transparentIfNot(vm.hasWon)
-          .animation(vm.hasWon)
+      
       
       HStack {
+        Image(.timerdecor)
+          .resizableToFit(height: 65)
+          .overlay {
+            Text("\(secondsToTimeString(Int(vm.gameTime.rounded(.up))))")
+              .tapinkFont(size: 13, style: .blackHanSansRegular, color: .white)
+              .yOffset(20)
+          }
         Button {
           vm.isFreeze = true
-          vm.freezeTime = 19
+          vm.freezeTime = 10
         } label: {
           Image(.freezebtn)
             .resizableToFit(height: 65)
@@ -82,8 +83,36 @@ struct Game: View {
         .disabled(vm.isFreeze)
         .shadow(color: Color("#C8FFFC").opacity(vm.isFreeze ? 1 : 0), radius: 24)
         .animation(vm.isFreeze)
+        
+        
+        Button {
+          vm.isImmortal = true
+          vm.immortalTime = 7
+        } label: {
+          Image(.shieldbtn)
+            .resizableToFit(height: 65)
+        }
+        .disabled(vm.isImmortal)
+        .shadow(color: Color("#C8FFFC").opacity(vm.isImmortal ? 1 : 0), radius: 20)
+        .animation(vm.isImmortal)
+        
+        Image(.tapcountdecor)
+          .resizableToFit(height: 65)
+          .overlay {
+            Text("\(vm.tapCount)")
+              .tapinkFont(size: 13, style: .blackHanSansRegular, color: .white)
+              .yOffset(20)
+          }
       }
       .yOffset(vm.footer)
+      
+      ZStack {
+        if vm.hasWon {
+          Win()
+        }
+    }
+      .transparentIfNot(vm.hasWon)
+      .animation(vm.hasWon)
     }
     .onAppear {
       let bounds = CGRect(origin: .zero, size: vm.size)
@@ -104,6 +133,11 @@ struct Game: View {
   }
 }
 
+func secondsToTimeString(_ seconds: Int) -> String {
+    let minutes = seconds / 60
+    let secs = seconds % 60
+    return String(format: "%d:%02d", minutes, secs)
+}
 
 #Preview {
   Game()

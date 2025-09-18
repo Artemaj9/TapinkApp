@@ -19,10 +19,15 @@ final class GameViewModel: ObservableObject {
   @Published var currentLevel = 1
   @Published var currentSkin = 1
   @Published var balance = 0
-  @Published var freezeTime: Double = 10
+
   
   @Published var isFreeze = false
+  @Published var freezeTime: Double = 10
   @Published var isImmortal = false
+  @Published var immortalTime: Double = 7
+  
+  @Published var gameTime: Double = 20
+  @Published var tapCount = 10
   
   @Published var isWin = false
   
@@ -243,6 +248,8 @@ final class GameViewModel: ObservableObject {
     big = getBigPoint()
     updateSmallPosition()
     freezeTime = 10
+    gameTime = Double(timings[currentLevel - 1])
+    tapCount = taps[currentLevel - 1]
 
  //   big = CGPoint(x: gameFieldBounds.midX + gameFieldBounds.width*0.3, y: gameFieldBounds.minY + 40)
     //  stopGameLoop()
@@ -314,6 +321,8 @@ final class GameViewModel: ObservableObject {
           self.artifactScreenShown = self.isArtifact
         }
       }
+    } else if tapCount == 0 {
+      resetGame()
     }
   }
   
@@ -381,11 +390,11 @@ final class GameViewModel: ObservableObject {
   }
   
   func handleTap(at point: CGPoint) {
-    guard pointInsideField(point) else { return }
-    
+    guard pointInsideField(point), tapCount > 0 else { return }
     isRotationPaused = true
     rotationAngle = 0
     showSmall = false
+    tapCount -= 1
     
     let dx = small.x - big.x
     let dy = small.y - big.y
@@ -442,7 +451,16 @@ final class GameViewModel: ObservableObject {
     crossAngle += 0.01
     updateSmallPosition()
     updateMovingBlock()
-    checkLoseCondition()
+    if !isImmortal  {
+      checkLoseCondition()
+    }
+    
+    if gameTime > 0 {
+      gameTime = max((gameTime - 0.016), 0)
+    } else {
+      resetGame()
+    }
+    
     if !openSkins[currentLevel - 1] && !isArtifact {
       checkBonusCollision()
     }
@@ -451,6 +469,14 @@ final class GameViewModel: ObservableObject {
       if freezeTime <= 0 {
         isFreeze = false
         freezeTime = 10
+      }
+    }
+    
+    if isImmortal {
+      immortalTime -= 0.016
+      if immortalTime <= 0 {
+        isImmortal = false
+        immortalTime = 7
       }
     }
     
