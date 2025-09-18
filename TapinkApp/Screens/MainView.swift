@@ -9,12 +9,19 @@ struct MainView: View {
         
         
         Image("ball\(vm.currentSkin)")
-          .resizableToFit(height: 70)
+          .resizableToFit(height: 2*vm.bigrad)
+          .scaleEffect(1 + 0.7*vm.loseAnimation)
+          .brightness(vm.loseAnimation == 1 ? 1 : 0)
+          .opacity(1 - Double(vm.loseAnimation))
+          .animation(.linear(duration: 0.1), vm.loseAnimation)
           .position(vm.big)
+          .animation(.linear(duration: 0.1), vm.big)
+       
+        //  .animation(vm.big)
         
         
         Image(.moon)
-          .resizableToFit(height: 40)
+          .resizableToFit(height: 2*vm.smallrad)
           .position(vm.small)
         //.opacity(vm.showSmall ? 1 : 0)
         //  .animation(vm.showSmall)
@@ -83,7 +90,7 @@ struct MainView: View {
       Button {
         nm.navigate(.levels)
       } label: {
-        Image(.wardrobebtn)
+        Image(.levelsbtn)
           .resizableToFit(height: 96)
       }
     }

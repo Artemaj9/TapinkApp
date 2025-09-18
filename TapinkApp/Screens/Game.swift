@@ -47,7 +47,6 @@ struct Game: View {
         .fill(Color.red)
         .frame(width: 10, height: 10)
         .position(vm.small)
-      //.opacity(vm.showSmall ? 1 : 0)
         .animation(vm.showSmall)
       
       // Score / Win overlay

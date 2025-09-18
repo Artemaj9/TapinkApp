@@ -10,6 +10,7 @@ struct SizeReader: ViewModifier {
           Color.clear
             .onAppear {
               size = geo.size
+              print("\(size)")
             }
         }
       )
