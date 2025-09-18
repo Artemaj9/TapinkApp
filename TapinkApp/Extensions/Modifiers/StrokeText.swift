@@ -4,7 +4,7 @@ struct StrokeText: ViewModifier {
   private let id = UUID()
   var strokeSize: CGFloat = 1
   var color: Color = .green
-
+  
   func body(content: Content) -> some View {
     content
       .padding(strokeSize * 2)
@@ -16,7 +16,7 @@ struct StrokeText: ViewModifier {
           }
       )
   }
-
+  
   func outline(content: Content) -> some View {
     Canvas { content, size in
       content.addFilter(.alphaThreshold(min: 0.01))

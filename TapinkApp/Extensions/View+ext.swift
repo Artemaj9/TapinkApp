@@ -62,12 +62,12 @@ extension View {
     }
   }
   
-  func sparkFont(size: CGFloat, style: CustomFont, color: Color) -> some View {
+  func tapinkFont(size: CGFloat, style: CustomFont, color: Color) -> some View {
     return font(.custom(style, size: size))
       .foregroundStyle(color)
   }
   
-  func sparkFont(size: CGFloat, style: CustomFont, color: String) -> some View {
+  func tapinkFont(size: CGFloat, style: CustomFont, color: String) -> some View {
     return font(.custom(style, size: size))
       .foregroundStyle(Color(color))
   }

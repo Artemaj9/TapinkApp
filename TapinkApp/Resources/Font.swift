@@ -1,11 +1,7 @@
 import SwiftUI
 
 enum CustomFont: String {
-  case rubikBold = "Rubik-Bold"
-  case rubikSemiBold = "Rubik-SemiBold"
-  case rubikMedium = "Rubik-Medium"
-  case rubikRegular = "Rubik-Regular"
-  case rubikLight = "Rubik-Light"
+  case blackHanSansRegular = "Black Han Sans Regular"
 }
 
 extension Font {

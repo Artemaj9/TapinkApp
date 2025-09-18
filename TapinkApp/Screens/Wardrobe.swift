@@ -1,10 +1,3 @@
-//
-//  Wardrobe.swift
-//  TapinkApp
-//
-//  Created by Artem on 17.09.2025.
-//
-
 import SwiftUI
 
 struct Wardrobe: View {

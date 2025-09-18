@@ -39,12 +39,12 @@ Photos and user-entered data are used solely for local analysis and are stored o
 """, "Frequent sound cues give the impression of near-wins. The coin feature appears often but delivers low-value results. Bonus visuals are prominent but rarely activate.",
 " Stick to low, fixed bets. If no bonus is triggered within 50 spins, walk away. Don’t fall for the illusion of a “hot streak” — it's likely engineered.",
 " Set clear time and budget limits. This slot is designed to keep you playing longer with inconsistent rewards. Take breaks and avoid emotional play."
-]
+  ]
   
   
   static let howWorks = [
     "Take a photo of a slot machine screen (physical or online).",
-  "Provide additional details: name (if known), intended bankroll, optional location and personal note.",
+    "Provide additional details: name (if known), intended bankroll, optional location and personal note.",
     "The app processes this input using AI and returns a concise review:",
 """
 \u{2022} Core characteristics of the slot;
