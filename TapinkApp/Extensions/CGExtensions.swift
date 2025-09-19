@@ -77,6 +77,33 @@ extension CGMutablePath {
 
       return clockwise ? CGPoint(x: cx1, y: cy1) : CGPoint(x: cx2, y: cy2)
   }
+
 }
 
 extension CGRect { var center: CGPoint { .init(x: midX, y: midY) } }
+func circleThrough(_ a: CGPoint, _ b: CGPoint, _ c: CGPoint,
+                   epsilon: CGFloat = 1e-9) -> (center: CGPoint, radius: CGFloat) {
+    let x1 = a.x, y1 = a.y
+    let x2 = b.x, y2 = b.y
+    let x3 = c.x, y3 = c.y
+
+    // Determinant (twice the oriented area of triangle ABC)
+    let d = 2 * (x1*(y2 - y3) + x2*(y3 - y1) + x3*(y1 - y2))
+  if abs(d) < epsilon { return (.zero, .zero) } // collinear or too close
+
+    // Squared lengths
+    let s1 = x1*x1 + y1*y1
+    let s2 = x2*x2 + y2*y2
+    let s3 = x3*x3 + y3*y3
+
+    // Circumcenter formulas
+    let ux = (s1*(y2 - y3) + s2*(y3 - y1) + s3*(y1 - y2)) / d
+    let uy = (s1*(x3 - x2) + s2*(x1 - x3) + s3*(x2 - x1)) / d
+    let center = CGPoint(x: ux, y: uy)
+
+    // Radius = distance center→any point
+    let dx = x1 - ux, dy = y1 - uy
+    let r = CGFloat(hypot(dx, dy))
+
+    return (center, r)
+}

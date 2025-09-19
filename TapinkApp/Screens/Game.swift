@@ -6,10 +6,8 @@ struct Game: View {
   
   var body: some View {
     ZStack {
-      // Background
      Color("#35084E").ignoresSafeArea()
     
-     Color.black.ignoresSafeArea()
       HStack {
         Image(.balancebggame)
           .resizableToFit(height: 28)
@@ -42,12 +40,10 @@ struct Game: View {
       
       Group {
         if let path = vm.gameFieldPath {
-          FieldShape(path: path)
-            .fill(ImagePaint(image: .init(.gamefieldbg)), style: FillStyle(eoFill: true))
+            FieldShape(path: path)
+              .fill( ImagePaint(image: .init(.gamefieldbg)), style: FillStyle(eoFill: true))
+       //   }
           
-          
-          
-          // playable area
           FieldShape(path: path)
             .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
         }
@@ -66,6 +62,12 @@ struct Game: View {
               .position(x: r.midX, y: r.midY)
       }
       
+      // Level 4: diagonal mover
+      Image(.redobst)
+        .resizableToFit(width: vm.movingRect4Frame.height*1.3)
+         // .frame(width: vm.movingRect4Frame.width, height: vm.movingRect4Frame.height)
+          .position(x: vm.movingRect4Frame.midX, y: vm.movingRect4Frame.midY)
+      
       // Level 7: vertical + horizontal movers
       ForEach(Array(vm.movingRects7Frames.enumerated()), id: \.offset) { _, r in
         Image(.redobst)
@@ -83,7 +85,6 @@ struct Game: View {
       
       // Portal
       ZStack {
-
             Image(.wirl)
           .resizableToFit(height: 1.7*vm.portalRect.height)
       }
@@ -118,7 +119,8 @@ struct Game: View {
         .animation(vm.showSmall)
         .transparentIf(vm.hasWon)
         .position(vm.small)
-   
+        .transparentIf(vm.hideSmall)
+        .animation(.linear(duration: 0.1), vm.hideSmall)
      
       
       HStack {
@@ -137,6 +139,8 @@ struct Game: View {
             .resizableToFit(height: 65)
         }
         .disabled(vm.isFreeze)
+        .disabled(vm.balance < 100)
+        .opacity(vm.balance < 100 && !vm.isFreeze ? 0.6 : 1)
         .shadow(color: Color("#C8FFFC").opacity(vm.isFreeze ? 1 : 0), radius: 24)
         .animation(vm.isFreeze)
         
@@ -149,6 +153,8 @@ struct Game: View {
             .resizableToFit(height: 65)
         }
         .disabled(vm.isImmortal)
+        .disabled(vm.balance < 200)
+        .opacity(vm.balance < 200 && !vm.isImmortal ? 0.6 : 1)
         .shadow(color: Color("#C8FFFC").opacity(vm.isImmortal ? 1 : 0), radius: 20)
         .animation(vm.isImmortal)
         
@@ -174,9 +180,6 @@ struct Game: View {
       let bounds = CGRect(origin: .zero, size: vm.size)
       vm.setGameField(size: vm.size)
       vm.startGameLoop()
-    }
-    .onDisappear {
-      vm.stopGameLoop()
     }
     .contentShape(Rectangle())
     .coordinateSpace(name: "game")

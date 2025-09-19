@@ -6,19 +6,28 @@ final class GameViewModel: ObservableObject {
   @Published var route: Route = .splash
   private var cancellables = Set<AnyCancellable>()
   private var freezecancellables = Set<AnyCancellable>()
-
+  private var splashDisposable = Set<AnyCancellable>()
+  @Published var splashTime: Double = 0
+  @Published var movingLetter = 0
+  @Published var hideSmall = false
   
-  // level 5
-  @Published var movingRects5Frames: [CGRect] = []     // for drawing
-  private var movingRects5: [MovingRect] = []         // internal simulation
+  // MARK: - Level 4:
+  @Published var movingRect4Frame: CGRect = .zero
+  private var movingRect4: MovingRect? = nil
+  private let moving4Size = CGSize(width: 30, height: 30)
+  private var moving4Speed: CGFloat = 1.3
+  
+  // MARK: - Level 5:
+  @Published var movingRects5Frames: [CGRect] = []
+  private var movingRects5: [MovingRect] = []
   private let moving5Size = CGSize(width: 30, height: 30)
   private var moving5Speeds: [CGFloat] = [2.0, 1.6]
   
-  // MARK: - Level 7: one vertical + one horizontal moving rect
-  @Published var movingRects7Frames: [CGRect] = []     // for drawing
-  private var movingRects7: [MovingRect] = []         // simulation
+  // MARK: - Level 7:
+  @Published var movingRects7Frames: [CGRect] = []
+  private var movingRects7: [MovingRect] = []
   private let moving7Size = CGSize(width: 35, height: 35)
-  private var moving7Speeds: [CGFloat] = [1, 1.4]   // [vertical, horizontal]
+  private var moving7Speeds: [CGFloat] = [1, 1.4]
   
   // MARK Level 8
   @Published var level8Bands: [CGRect] = []
@@ -29,12 +38,13 @@ final class GameViewModel: ObservableObject {
   @Published var mode: SceneMode = .menu
   private(set) var screenRect: CGRect = .zero
   private var menuStartBig: CGPoint = .zero
-  @Published var openLevels = Array(repeating: false, count: 10)
-  //Array(repeating: true, count: 3) + Array(repeating: false, count: 7)
-  @Published var openSkins = Array(repeating: false, count: 10)
-  @Published var currentLevel = 10
-  @Published var currentSkin = 1
-  @Published var balance = 0
+  
+  @AppStorage("openlevels") var openLevels = [true]  + Array(repeating: false, count: 9)
+  @AppStorage("openSkins") var openSkins = Array(repeating: false, count: 10)
+  @AppStorage("balance") var balance = 0
+
+  @Published var currentLevel = 4
+  @AppStorage("currentSkin") var currentSkin = 1
 
   
   @Published var isFreeze = false
@@ -106,6 +116,34 @@ final class GameViewModel: ObservableObject {
   @Published var portalRect: CGRect = .zero
   @Published var bonusRect: CGRect = .zero
   
+  init() {
+    splashTimer()
+    let idx = openLevels.lastIndex(of: true) ?? -1
+    currentLevel = max(1, min(idx + 1, openLevels.count))
+  }
+  
+  func splashTimer() {
+    Timer.publish(every: 0.016, on: .main, in: .common)
+        .autoconnect()
+        .sink { [unowned self] _ in
+          splashTime += 0.016
+        }
+        .store(in: &splashDisposable)
+    
+    Timer.publish(every: 0.2, on: .main, in: .common)
+        .autoconnect()
+        .sink { [unowned self] _ in
+          if movingLetter < loading.count - 1 {
+            movingLetter += 1
+          } else {
+            movingLetter = 0
+          }
+          
+        }
+        .store(in: &splashDisposable)
+  }
+  
+  
   func getLevelPath() -> CGPath {
     switch currentLevel {
     case 1: return  level1PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
@@ -121,6 +159,8 @@ final class GameViewModel: ObservableObject {
     default: return  level1PlayablePath(in: gameFieldBounds, wallWidth: wallWidth)
     }
   }
+  
+  
   func getPortalRect()  -> CGRect {
     let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
     let portalSize = CGSize(width: 50, height: 50)
@@ -235,8 +275,8 @@ final class GameViewModel: ObservableObject {
     )
       
     case 4: return CGRect(
-      x: inner.midX - bonusSize.width / 2 + inner.width*0.15,
-      y: inner.minY - bonusSize.height / 2 + inner.height*0.17,
+      x: inner.midX - bonusSize.width / 2 + inner.width*0.01,
+      y: inner.minY - bonusSize.height / 2 + inner.height*0.1,
       width: bonusSize.width,
       height: bonusSize.height
     )
@@ -328,21 +368,37 @@ final class GameViewModel: ObservableObject {
       crossPivot    = cross.pivot
     }
     
+    
+    if currentLevel == 4 {
+        let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
+
+        let p2 = CGPoint(x: inner.minX + inner.width * 0.16,
+                         y: inner.minY + inner.height * 0.3565)
+        let p5 = CGPoint(x: inner.minX + inner.width * 0.6507,
+                         y: inner.minY + inner.height * 0.6856)
+
+        let safeP2 = nudgeCenterInsideField(from: p2, toward: p5, size: moving4Size)
+        let safeP5 = nudgeCenterInsideField(from: p5, toward: p2, size: moving4Size)
+
+        let waypoints = [safeP2, safeP5]
+        movingRect4 = MovingRect(size: moving4Size,
+                                 center: waypoints.first!,
+                                 waypoints: waypoints,
+                                 speed: moving4Speed)
+        movingRect4Frame = movingRect4!.frame
+    }
+    
     if currentLevel == 5 {
         let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
 
-        // pick two y-bands that exist inside your level 5 path
         let y1 = inner.minY + inner.height * 0.3
         let y2 = inner.minY + inner.height * 0.7
 
-        // compute horizontal spans inside the playable path at those y’s
         let span1 = horizontalSpan(atY: y1) ?? (inner.minX, inner.maxX)
         let span2 = horizontalSpan(atY: y2) ?? (inner.minX, inner.maxX)
 
-        // keep centers away from walls by half-size
         let mX = moving5Size.width / 2 + 2
 
-        // Waypoints left<->right (you can add p3/p4 if you want a more complex loop)
         let left1  = CGPoint(x: span1.minX + mX, y: y1)
         let right1 = CGPoint(x: span1.maxX - mX, y: y1)
 
@@ -358,10 +414,7 @@ final class GameViewModel: ObservableObject {
     
     if currentLevel == 6 {
       let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
-      // fixed X near top-right (like your screenshot); change if you want
       let x = inner.minX + inner.width * 0.78
-      
-      // compute top/bottom Y available along that X inside the path
       let span = verticalSpan(atX: x) ?? (inner.minY, inner.maxY)
       
       movingBlockTopY = span.minY + movingBlockSize / 2
@@ -378,7 +431,6 @@ final class GameViewModel: ObservableObject {
     if currentLevel == 7 {
         let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
 
-        // Vertical mover near x = 0.3 * width
         let vx = inner.minX + inner.width * 0.30
         let vSpan = verticalSpan(atX: vx) ?? (inner.minY, inner.maxY)
         let vTop    = vSpan.minY + moving7Size.height/2 + 1
@@ -388,7 +440,6 @@ final class GameViewModel: ObservableObject {
                                center: vWaypoints.first!, waypoints: vWaypoints,
                                speed: moving7Speeds[0])
 
-        // Horizontal mover near y = 0.7 * height
         let hy = inner.minY + inner.height * 0.67
         let hSpan = horizontalSpan(atY: hy) ?? (inner.minX, inner.maxX)
         let hLeft  = hSpan.minX + moving7Size.width/2 + 1
@@ -422,19 +473,10 @@ final class GameViewModel: ObservableObject {
         }
         level8Bands = bands
     }
-    // Inner playable “corridor” bounds (inside walls)
     let inner = gameFieldBounds.insetBy(dx: wallWidth, dy: wallWidth)
-    
-    // ---- FIXED POSITIONS ----
-    
-    // 1) Big circle starts at the upper/top area (tweak offset if you like)
-    let startOffset: CGFloat = 160
+
     startBigPoint = getBigPoint()
-    
-    // 2) Portal
     portalRect = getPortalRect()
-    
-    // 3) Bonus fixed at the center (no randomness)
     bonusRect = getBonusRect()
     resetGame()
   }
@@ -467,23 +509,20 @@ final class GameViewModel: ObservableObject {
     return nil
   }
   
-
-  
-  
   func resetGame() {
     hasWon = false
     isArtifact = false
     artifactScreenShown = false
     rotationAngle = 0
     loseAnimation = 0
+    hideSmall = false
     big = getBigPoint()
     updateSmallPosition()
     freezeTime = 10
+    isFreeze = false
+    isImmortal = false
     gameTime = Double(timings[currentLevel - 1])
     tapCount = taps[currentLevel - 1]
-
- //   big = CGPoint(x: gameFieldBounds.midX + gameFieldBounds.width*0.3, y: gameFieldBounds.minY + 40)
-    //  stopGameLoop()
   }
   
   // MARK: - Game loop
@@ -499,8 +538,6 @@ final class GameViewModel: ObservableObject {
     timerCancellable?.cancel()
     timerCancellable = nil
   }
-  
-
   
   // MARK: - Tap
   func handleTap() {
@@ -534,14 +571,13 @@ final class GameViewModel: ObservableObject {
   
   private func checkWinCondition() {
     if portalRect.contains(small) || portalRect.contains(big) {
-  
+      hideSmall = true
       withAnimation {
         big = CGPoint(x: portalRect.midX, y: portalRect.midY)
         small = CGPoint(x: portalRect.midX, y: portalRect.midY)
-        showSmall = false
       }
       
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
         if let self {
           hasWon = true
           self.artifactScreenShown = self.isArtifact
@@ -559,19 +595,9 @@ final class GameViewModel: ObservableObject {
   }
   
   private func checkLoseCondition() {
-    // circles must stay strictly inside the field
-   //    let bigInside = gameField.contains(big)
-     //let smallInside = gameField.contains(small)
     let bigInside = pointInsideField(big)
     let smallInside = pointInsideField(small) || currentLevel == 9
-//    if !bigInside || !smallInside {
-//      resetGame()
-//    }
-    
-//    let bigInside   = circleInsideField(center: big, radius: bigrad)
-//      let smallInside = (currentLevel == 9)
-//            ? true
-//    : circleInsideField(center: small, radius: smallrad)
+
 
         if !bigInside || !smallInside {
           loseAnimation = 1
@@ -585,6 +611,16 @@ final class GameViewModel: ObservableObject {
         intersectsRotatingCross(center: small, radius: 5)) && currentLevel == 10 {
       resetGame()
     }
+    
+    if currentLevel == 4, movingRect4 != nil {
+      let r = movingRect4Frame
+      if circleIntersectsRect(center: big,   radius: bigrad,   rect: r) ||
+          circleIntersectsRect(center: small, radius: smallrad, rect: r) {
+        resetGame()
+        return
+      }
+    }
+    
     if currentLevel == 5, !movingRects5Frames.isEmpty {
         for r in movingRects5Frames {
             if circleIntersectsRect(center: big, radius: bigrad, rect: r) ||
@@ -628,7 +664,7 @@ final class GameViewModel: ObservableObject {
     return path.contains(p, using: .evenOdd, transform: .identity)
   }
   
-  private func thickSegmentPolygon(from a: CGPoint, to b: CGPoint, thickness: CGFloat) -> [CGPoint] {
+  func thickSegmentPolygon(from a: CGPoint, to b: CGPoint, thickness: CGFloat) -> [CGPoint] {
     let dx = b.x - a.x, dy = b.y - a.y
     let len = max(hypot(dx, dy), 0.0001)
     
@@ -641,6 +677,20 @@ final class GameViewModel: ObservableObject {
       CGPoint(x: b.x - ox, y: b.y - oy),
       CGPoint(x: a.x - ox, y: a.y - oy)
     ]
+  }
+  
+func nudgeCenterInsideField(from a: CGPoint, toward b: CGPoint, size: CGSize, step: CGFloat = 2, maxSteps: Int = 120) -> CGPoint {
+      var c = a
+      let dx = b.x - a.x, dy = b.y - a.y
+      let len = max(hypot(dx, dy), 0.0001)
+      let ux = dx / len, uy = dy / len
+      var k = 0
+      while !rectInsideField(CGRect(center: c, size: size)) && k < maxSteps {
+          c.x += ux * step
+          c.y += uy * step
+          k += 1
+      }
+      return c
   }
   
   func handleTap(at point: CGPoint) {
@@ -711,16 +761,30 @@ final class GameViewModel: ObservableObject {
   // MARK: Route
   func hideSplash() {
     route = .mainScreen
+    
+    for item in splashDisposable {
+      item.cancel()
+    }
   }
 
+  private func updateMovingRectLevel4() {
+      guard currentLevel == 4, var rect = movingRect4 else { return }
+      rect.step()
+      movingRect4 = rect
+      movingRect4Frame = rect.frame
+  }
+  
   private func tickGame() {
     guard mode == .game, !hasWon, !isRotationPaused, !artifactScreenShown else { return }
     rotationAngle += isFreeze ? 0.04 : 0.08
     crossAngle += 0.004
     updateSmallPosition()
+    
+    if currentLevel == 4 { updateMovingRectLevel4() }
+    if currentLevel == 5 { updateMovingRectsLevel5() }
     if currentLevel == 6 { updateMovingBlock() }
-       if currentLevel == 5 { updateMovingRectsLevel5() }
     if currentLevel == 7 { updateMovingRectsLevel7() }
+    
     if !isImmortal  {
       checkLoseCondition()
     }
@@ -920,5 +984,11 @@ private struct MovingRect {
         CGRect(x: center.x - size.width/2,
                y: center.y - size.height/2,
                width: size.width, height: size.height)
+    }
+}
+
+private extension CGRect {
+    init(center: CGPoint, size: CGSize) {
+        self.init(x: center.x - size.width/2, y: center.y - size.height/2, width: size.width, height: size.height)
     }
 }

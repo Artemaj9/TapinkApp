@@ -80,11 +80,14 @@ struct Win: View {
         if vm.currentLevel < 10 {
           vm.openLevels[vm.currentLevel] = true
           vm.currentLevel += 1
+          print(vm.currentLevel)
         } else {
           vm.openLevels[9] = true
           vm.currentLevel = 10
         }
-        vm.isWin = false
+        vm.setGameField(size: vm.size)
+        vm.startGameLoop()
+        vm.resetGame()
       } label: {
         VStack(spacing: 20) {
           Image(.play)

@@ -6,8 +6,12 @@ struct ContentView: View {
   @StateObject var nm = NavigationState()
   
     var body: some View {
-      MainView()
-        .env(vm, nm)
+      AppViewBuilder(
+        route: $vm.route,
+        splash: { Splash() },
+        mainScreen: { MainView() }
+      )
+      .env(vm, nm)
     }
 }
 

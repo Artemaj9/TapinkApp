@@ -7,41 +7,36 @@ struct Wardrobe: View {
   
   var body: some View {
     ZStack {
-     bg
+      bg
       
-     
+      
       Image(.light)
         .resizableToFit()
         .scaleEffect(1.1)
-       // .overlayM
+      // .overlayM
         .yOffset(-vm.h*0.28)
         .blendMode(.luminosity)
       Image("b\(vm.currentSkin)")
         .resizableToFit(height: 150)
         .animation(vm.currentSkin)
         .yOffset(-vm.h*0.28)
-    
-
+      
+      
       grads[vm.currentSkin - 1]
         .height(28)
         .yOffset(-8)
       
-      .mask {
-        Text("CHANGE YOUR APPEARANCE!")
-          .tapinkFont(size: 21, style: .blackHanSansRegular, color: .white)
-      }
-      .animation(vm.currentSkin)
-      .overlayMask {
-        Smoke(effect: "flickerShader")
-          .opacity(0.2)
-      }
-//        .overlay {
-//          Image(.wardtitle)
-//            .resizableToFit(height: 28)
-//            .opacity(0.7)
-//        }
+        .mask {
+          Text("CHANGE YOUR APPEARANCE!")
+            .tapinkFont(size: 21, style: .blackHanSansRegular, color: .white)
+        }
+        .animation(vm.currentSkin)
+        .overlayMask {
+          Smoke(effect: "flickerShader")
+            .opacity(0.2)
+        }
         .yOffset(-vm.h*0.15)
-    
+      
       
       Image(.wmoon)
         .resizableToFit(height: 80)
@@ -49,7 +44,7 @@ struct Wardrobe: View {
       Text("Find mysterious boxes on the level\n and open new balls")
         .multilineTextAlignment(.center)
         .tapinkFont(size: 14, style: .blackHanSansRegular, color: .white)
-       
+      
         .yOffset(-vm.h*0.1)
       
       xbtn
@@ -67,7 +62,7 @@ struct Wardrobe: View {
                     .resizableToFit(height: 75)
                     .transparentIf(vm.currentSkin == j + 3*i + 1)
                     .animation(vm.currentSkin)
-
+                  
                   Image(.selbg)
                     .resizableToFit(height: 76)
                     .transparentIfNot(vm.currentSkin == j + 3*i + 1)
@@ -75,14 +70,14 @@ struct Wardrobe: View {
                   Image("b\(j + 3*i + 1)")
                     .resizableToFit(height: 48)
                     .opacity(vm.openSkins[j + 3*i] ? 1 : 0.6)
-
+                  
                   Image(.lock)
                     .resizableToFit(height: 38)
                     .transparentIf(vm.openSkins[j + 3*i])
                 }
                 .frame(width: vm.w*0.3)
               }
-          //   .disabled(!vm.openSkins[j + 3*i])
+              .disabled(!vm.openSkins[j + 3*i])
               
             }
           }
@@ -95,7 +90,7 @@ struct Wardrobe: View {
               .resizableToFit(height: 75)
               .transparentIf(vm.currentSkin == 10)
               .animation(vm.currentSkin)
-
+            
             Image(.selbg)
               .resizableToFit(height: 76)
               .transparentIfNot(vm.currentSkin == 10)
@@ -103,15 +98,15 @@ struct Wardrobe: View {
             Image("b10")
               .resizableToFit(height: 48)
               .opacity(vm.openSkins[9] ? 1 : 0.6)
-
+            
             Image(.lock)
               .resizableToFit(height: 38)
               .transparentIf(vm.openSkins[9])
           }
           .frame(width: vm.w*0.3)
-
+          
         }
-     //   .disabled(!vm.openSkins[9])
+        .disabled(!vm.openSkins[9])
         
       }
       .yOffset(vm.h*0.2)
@@ -147,7 +142,7 @@ struct Wardrobe: View {
 }
 
 #Preview {
-    Wardrobe()
+  Wardrobe()
     .vm
     .nm
 }
@@ -163,5 +158,4 @@ let grads:[LinearGradient] = [
   LinearGradient(colors: [Color("FFE760"), Color("948600")], startPoint: .top, endPoint: .bottom),
   LinearGradient(colors: [Color("6085FF"), Color("070094")], startPoint: .top, endPoint: .bottom),
   LinearGradient(colors: [Color("FF9060"), Color("60FFE7")], startPoint: .top, endPoint: .bottom),
-  
 ]
