@@ -190,6 +190,13 @@ final class GameViewModel: ObservableObject {
       width: portalSize.width,
       height: portalSize.height
     )
+      
+    case 10: return CGRect(
+      x: inner.minX + portalSize.width/2 + inner.width*0.01,
+      y: inner.minY + portalSize.height + inner.height*0.27,
+      width: portalSize.width,
+      height: portalSize.height
+    )
    
     default:
       return  CGRect(
@@ -269,6 +276,14 @@ final class GameViewModel: ObservableObject {
       height: bonusSize.height
     )
       
+    case 10: return CGRect(
+      x: inner.midX - bonusSize.width / 2  + inner.width*0.3,
+      y: inner.midY - bonusSize.height / 2 - inner.height*0.25,
+      width: bonusSize.width,
+      height: bonusSize.height
+    )
+      
+      
     default: return CGRect(
       x: inner.midX - bonusSize.width / 2,
       y: inner.midY - bonusSize.height / 2,
@@ -289,12 +304,13 @@ final class GameViewModel: ObservableObject {
     case 7: return CGPoint(x: gameFieldBounds.minX + gameFieldBounds.width*0.8  , y: gameFieldBounds.minY + gameFieldBounds.height*0.23)
     case 8: return CGPoint(x: gameFieldBounds.midX  , y: gameFieldBounds.minY + gameFieldBounds.height*0.15)
     case 9: return CGPoint(x: gameFieldBounds.maxX - gameFieldBounds.width*0.18, y: gameFieldBounds.minY + gameFieldBounds.height*0.15)
+    case 10: return CGPoint(x: gameFieldBounds.minX + gameFieldBounds.width*0.16, y: gameFieldBounds.minY + gameFieldBounds.height*0.75)
     default: return CGPoint(x: gameFieldBounds.minX, y: gameFieldBounds.minY)
     }
   }
   
   func setGameField(size: CGSize) {
-    let fieldWidth =  (currentLevel == 4 || currentLevel == 9) ? size.width : size.width * 0.9 //size.width // level 4
+    let fieldWidth =  (currentLevel == 4 || currentLevel == 9 || currentLevel == 10) ? size.width : size.width * 0.9 //size.width // level 4
     let fieldHeight = size.height * 0.65
     let center = CGPoint(x: size.width / 2, y: size.height / 2)
     mode = .game
@@ -700,7 +716,7 @@ final class GameViewModel: ObservableObject {
   private func tickGame() {
     guard mode == .game, !hasWon, !isRotationPaused, !artifactScreenShown else { return }
     rotationAngle += isFreeze ? 0.04 : 0.08
-    crossAngle += 0.01
+    crossAngle += 0.004
     updateSmallPosition()
     if currentLevel == 6 { updateMovingBlock() }
        if currentLevel == 5 { updateMovingRectsLevel5() }

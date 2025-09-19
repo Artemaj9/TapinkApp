@@ -197,10 +197,10 @@ extension GameViewModel {
     let height = inner.height
     let width  = inner.width
     let cl = width * 0.07
-    let ch = height * 0.25
+    let ch = height * 0.17
     
-    let sx = inner.minX + width * 0.7
-    let sy = inner.minY + height * 0.3
+    let sx = inner.minX + width * 0.68
+    let sy = inner.minY + height * 0.25
     
     let p = CGMutablePath()
     p.move(to: CGPoint(x: sx,            y: sy))

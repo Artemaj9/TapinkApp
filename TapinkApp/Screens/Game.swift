@@ -92,7 +92,7 @@ struct Game: View {
       // Bonus
    
         Image(.prizebox)
-        .resizableToFit(height: vm.currentLevel == 9 ? vm.bonusRect.height*1.8 : vm.bonusRect.height*2.3)
+        .resizableToFit(height: vm.currentLevel == 9 ? vm.bonusRect.height*1.8 : vm.bonusRect.height*2)
         .position(x: vm.bonusRect.midX, y: vm.bonusRect.midY)
         .transparentIf(vm.openSkins[vm.currentLevel - 1] || vm.isArtifact)
         .animation(vm.isArtifact)
