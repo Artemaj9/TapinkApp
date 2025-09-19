@@ -7,9 +7,9 @@ struct Game: View {
   var body: some View {
     ZStack {
       // Background
-      Color("#35084E").ignoresSafeArea()
+     Color("#35084E").ignoresSafeArea()
     
-     // Color.black.ignoresSafeArea()
+     Color.black.ignoresSafeArea()
       HStack {
         Image(.balancebggame)
           .resizableToFit(height: 28)
@@ -33,21 +33,52 @@ struct Game: View {
       }
       .yOffset(vm.header)
       .hPadding(30)
-      
-      if let path = vm.gameFieldPath {
-            FieldShape(path: path)
-         .fill(ImagePaint(image: .init(.gamefieldbg)), style: FillStyle(eoFill: true))
-
-          
-      
-          // playable area
-        FieldShape(path: path)
-          .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
+      if vm.currentLevel == 9 {
+        Image(.coolbg)
+          .resizableToFit()
+          .scaleEffect(1.3)
+          .yOffset(vm.h*0.1)
       }
+      
+      Group {
+        if let path = vm.gameFieldPath {
+          FieldShape(path: path)
+            .fill(ImagePaint(image: .init(.gamefieldbg)), style: FillStyle(eoFill: true))
+          
+          
+          
+          // playable area
+          FieldShape(path: path)
+            .stroke(.purple, lineWidth: vm.wallWidth)       // walls outline (optional)
+        }
+      }
+       
       
       if let cross = vm.rotatedCrossPath() {
         FieldShape(path: cross)
           .fill(.red.opacity(0.4))
+      }
+      
+      ForEach(Array(vm.movingRects5Frames.enumerated()), id: \.offset) { _, r in
+        Image(.redobst)
+          .resizableToFit(width: r.height*1.3)
+              .frame(width: r.width, height: r.height)
+              .position(x: r.midX, y: r.midY)
+      }
+      
+      // Level 7: vertical + horizontal movers
+      ForEach(Array(vm.movingRects7Frames.enumerated()), id: \.offset) { _, r in
+        Image(.redobst)
+          .resizableToFit(width: r.height*1.3)
+              .frame(width: r.width, height: r.height)
+              .position(x: r.midX, y: r.midY)
+      }
+      
+      ForEach(Array(vm.level8Bands.enumerated()), id: \.offset) { _, r in
+          Rectangle()
+              .fill(Color("701014").opacity(0.85))
+              .frame(width: r.width, height: r.height)
+              .position(x: r.midX, y: r.midY)
       }
       
       // Portal
@@ -61,13 +92,13 @@ struct Game: View {
       // Bonus
    
         Image(.prizebox)
-          .resizableToFit(height: vm.bonusRect.height*2.3)
+        .resizableToFit(height: vm.currentLevel == 9 ? vm.bonusRect.height*1.8 : vm.bonusRect.height*2.3)
         .position(x: vm.bonusRect.midX, y: vm.bonusRect.midY)
         .transparentIf(vm.openSkins[vm.currentLevel - 1] || vm.isArtifact)
         .animation(vm.isArtifact)
       
-      Rectangle()
-        .fill(Color.red.opacity(0.8))
+      Image(.redobst)
+        .resizableToFit(width: vm.movingBlockRect.height*1.3)
         .frame(width: vm.movingBlockRect.width, height: vm.movingBlockRect.height)
         .position(x: vm.movingBlockRect.midX, y: vm.movingBlockRect.midY)
       
@@ -88,11 +119,7 @@ struct Game: View {
         .transparentIf(vm.hasWon)
         .position(vm.small)
    
-      
-      // Score / Win overlay
      
-        
-      
       
       HStack {
         Image(.timerdecor)

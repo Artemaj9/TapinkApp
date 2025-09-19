@@ -64,14 +64,16 @@ extension GameViewModel {
     let p6 = CGPoint(x: inner.minX, y: inner.maxY)
     
     
-    // p.move(to: CGPoint(x: inner.minX, y: inner.minY))
-    //  p.addLine(to: p1)
+     p.move(to: p1)
+     p.addLine(to: p1)
     p.addArc(center: center1, radius: radius1, startAngle:  atan2(p1.y - center1.y, p1.x - center1.x), endAngle: -.pi/2, clockwise: false)
     p.addArcBetween(start: p2, end: p3, radius: radius2, clockwise: false)
     p.addLine(to: p4)
     p.addArcBetween(start: p4, end: p5, radius: radius2, clockwise: false)
     p.addArcBetween(start: p5, end: p6, radius: radius1, clockwise: false)
+    p.move(to: p6)
     p.addLine(to: p1)
+    p.closeSubpath()
     
     return p
   }
@@ -83,7 +85,7 @@ extension GameViewModel {
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
     p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.minY))
     p.closeSubpath()
     return p
   }
@@ -113,7 +115,7 @@ extension GameViewModel {
     p.move(to: CGPoint(x: inner.minX , y: inner.minY))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY + height*0.4))
-    p.addLine(to: CGPoint(x: inner.minX + width*0.35, y: inner.minY + height*0.6))
+    p.addLine(to: CGPoint(x: inner.minX + width*0.4, y: inner.minY + height*0.6))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY + height*0.55))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
     p.addLine(to: CGPoint(x: inner.midX, y: inner.maxY - height*0.05))
@@ -156,7 +158,7 @@ extension GameViewModel {
     path.closeSubpath()
     path.move(to: CGPoint(x: 0.44249*width, y:inner.minY + 0.44811*height))
     
-    return path
+    return scaledCopy(of:path, expandBy: 5)
   }
   
   func level8PlayablePath(in rect: CGRect, wallWidth: CGFloat) -> CGPath {
@@ -166,7 +168,7 @@ extension GameViewModel {
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
     p.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
     p.addLine(to: CGPoint(x: inner.minX, y: inner.maxY))
-    p.addLine(to: CGPoint(x: inner.maxX, y: inner.minY))
+    p.addLine(to: CGPoint(x: inner.minX, y: inner.minY))
     p.closeSubpath()
     return p
   }
@@ -219,4 +221,29 @@ extension GameViewModel {
     let pivot = CGPoint(x: sx + cl * 0.5, y: sy + ch + cl * 0.5)
     return (p, pivot)
   }
+  
+  
+  func scaledCopy(of path: CGPath, expandBy delta: CGFloat) -> CGPath {
+      let bb = path.boundingBoxOfPath
+      guard bb.width > 0, bb.height > 0 else { return path }
+      // scale so the bbox grows by ±delta on each side
+      let sx = (bb.width  + 2*delta) / bb.width
+      let sy = (bb.height + 2*delta) / bb.height
+
+      var t = CGAffineTransform(translationX: -bb.midX, y: -bb.midY)
+          .scaledBy(x: sx, y: sy)
+          .translatedBy(x: bb.midX, y: bb.midY)
+      return path.copy(using: &t) ?? path
+  }
+  
+  func unionBaseAndScaled(base: CGPath, delta: CGFloat) -> (CGPath, CGPathFillRule) {
+      let outer = scaledCopy(of: base, expandBy: delta)
+      let u = CGMutablePath()
+      u.addPath(base)
+      u.addPath(outer)
+      // use .winding so both subpaths are filled (no hole)
+      return (u, .winding)
+  }
 }
+
+
