@@ -8,34 +8,12 @@ struct Game: View {
     ZStack {
      Color("#35084E").ignoresSafeArea()
     
-      HStack {
-        Image(.balancebggame)
-          .resizableToFit(height: 28)
-          .overlay(.leading) {
-            Image(.coin)
-              .resizableToFit(height: 32)
-          }
-          .overlay {
-            Text("\(vm.balance)")
-              .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
-            
-          }
-        Spacer()
-        Button {
-          nm.path = []
-          vm.resetGame()
-        } label: {
-          Image(.xbtn)
-            .resizableToFit(height: 40)
-        }
-      }
-      .yOffset(vm.header)
-      .hPadding(30)
+
       if vm.currentLevel == 9 {
         Image(.coolbg)
           .resizableToFit()
           .scaleEffect(1.3)
-          .yOffset(vm.h*0.1)
+          .yOffset(vm.h*0.05)
       }
       
       Group {
@@ -120,7 +98,6 @@ struct Game: View {
         .transparentIf(vm.hasWon)
         .position(vm.small)
         .transparentIf(vm.hideSmall)
-        .animation(.linear(duration: 0.1), vm.hideSmall)
      
       
       HStack {
@@ -167,6 +144,31 @@ struct Game: View {
           }
       }
       .yOffset(vm.footer)
+      
+      HStack {
+        Image(.balancebggame)
+          .resizableToFit(height: 28)
+          .overlay(.leading) {
+            Image(.coin)
+              .resizableToFit(height: 32)
+          }
+          .overlay {
+            Text("\(vm.balance)")
+              .tapinkFont(size: 15, style: .blackHanSansRegular, color: .white)
+            
+          }
+        Spacer()
+        Button {
+          nm.path = []
+          vm.resetGame()
+        } label: {
+          Image(.xbtn)
+            .resizableToFit(height: 40)
+        }
+      }
+      .yOffset(vm.header)
+      .yOffsetIf(vm.isSEight, -16)
+      .hPadding(30)
       
       ZStack {
         if vm.hasWon {

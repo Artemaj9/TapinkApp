@@ -50,6 +50,7 @@ struct MainView: View {
         playbtn
       }
       .onAppear {
+        vm.openSkins[6]  = false
                  vm.setMenuScene(size: vm.size)
                  vm.startGameLoop()      // reuses the same timer; tick routes to menu
              }
@@ -94,6 +95,7 @@ struct MainView: View {
     }
     .hPadding()
     .yOffset(-vm.h*0.3)
+    .yOffsetIf(vm.isSEight, 30)
 
   }
 }

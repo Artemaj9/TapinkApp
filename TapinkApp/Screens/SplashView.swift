@@ -30,7 +30,10 @@ struct SplashView: View {
     
     Image(.moon)
       .resizableToFit(height: 2*vm.smallrad)
-      .offset(orbitRadius*Double(cos(4*vm.splashTime)), orbitRadius*Double(sin(4*vm.splashTime)))
+      .offset(
+        orbitRadius*Double(cos(4*vm.splashTime)),
+        orbitRadius*Double(sin(4*vm.splashTime))
+      )
   }
   
   private var animTxt: some View {

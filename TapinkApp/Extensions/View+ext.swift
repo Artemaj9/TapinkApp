@@ -22,19 +22,6 @@ extension View {
     self.saturation(condition ? final : initial)
   }
   
-  func scrollMask(
-    _ location1: Double = 0.09, _ location2: Double = 0.15, _ location3: Double = 0.9,
-    _ location4: Double = 1
-  ) -> some View {
-    modifier(
-      ScrollMask(
-        location1: location1, location2: location2, location3: location3, location4: location4))
-  }
-  
-  func scrollMask(_ location2: Double = 0.15, _ location3: Double = 0.9) -> some View {
-    modifier(ScrollMask(location1: 0, location2: location2, location3: location3, location4: 1.0))
-  }
-  
   func readSize(_ size: Binding<CGSize>) -> some View {
     modifier(SizeReader(size: size))
   }
@@ -46,6 +33,7 @@ extension View {
   func overlayMask(@ViewBuilder content: () -> some View) -> some View {
     overlay { content().mask { self } }
   }
+  
   func superOverlay(@ViewBuilder content: () -> some View) -> some View {
     overlay {
       content().mask { self }
@@ -70,10 +58,6 @@ extension View {
   func tapinkFont(size: CGFloat, style: CustomFont, color: String) -> some View {
     return font(.custom(style, size: size))
       .foregroundStyle(Color(color))
-  }
-  
-  func customStroke(color: Color, width: CGFloat) -> some View {
-    modifier(StrokeText(strokeSize: width, color: color))
   }
   
   func env<T: ObservableObject>(_ object: T) -> some View {

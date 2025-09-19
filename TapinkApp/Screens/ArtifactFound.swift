@@ -15,6 +15,8 @@ struct ArtifactFound: View {
         
         Image(.starlight)
           .resizableToFit()
+          .scaleEffect(vm.isSEight ? 1.4 : 1)
+          .opacity(0.8)
         
         Image(.congrat)
           .resizableToFit()

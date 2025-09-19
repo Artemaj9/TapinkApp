@@ -317,8 +317,8 @@ final class GameViewModel: ObservableObject {
     )
       
     case 10: return CGRect(
-      x: inner.midX - bonusSize.width / 2  + inner.width*0.3,
-      y: inner.midY - bonusSize.height / 2 - inner.height*0.25,
+      x: inner.midX - bonusSize.width / 2  + inner.width*0.35,
+      y: inner.midY - bonusSize.height / 2 - inner.height*0.28,
       width: bonusSize.width,
       height: bonusSize.height
     )
@@ -349,10 +349,44 @@ final class GameViewModel: ObservableObject {
     }
   }
   
+  // Call this at the very start of setGameField(...)
+  private func clearLevelObstacles() {
+      // L4
+      movingRect4 = nil
+      movingRect4Frame = .zero
+
+      // L5
+      movingRects5.removeAll()
+      movingRects5Frames = []
+
+      // L6
+      movingBlockRect = .zero
+      movingBlockTopY = 0
+      movingBlockBottomY = 0
+      movingBlockDirection = 1
+
+      // L7
+      movingRects7.removeAll()
+      movingRects7Frames = []
+
+      // L8
+      level8Bands = []
+
+      // L10 (rotating cross)
+      crossBasePath = nil
+      crossPivot = .zero
+      crossAngle = 0
+  }
+
   func setGameField(size: CGSize) {
     let fieldWidth =  (currentLevel == 4 || currentLevel == 9 || currentLevel == 10) ? size.width : size.width * 0.9 //size.width // level 4
-    let fieldHeight = size.height * 0.65
-    let center = CGPoint(x: size.width / 2, y: size.height / 2)
+    let fieldHeight = isSEight ? size.height * 0.6 : size.height * 0.65
+    let const: CGFloat = isSEight ? 100 : 50
+    let center = CGPoint(x: size.width / 2, y: size.height / 2 - const)
+    
+    
+    clearLevelObstacles()
+
     mode = .game
     gameFieldBounds = CGRect(
       x: center.x - fieldWidth / 2,
@@ -574,7 +608,7 @@ final class GameViewModel: ObservableObject {
       hideSmall = true
       withAnimation {
         big = CGPoint(x: portalRect.midX, y: portalRect.midY)
-        small = CGPoint(x: portalRect.midX, y: portalRect.midY)
+      //  small = CGPoint(x: portalRect.midX, y: portalRect.midY)
       }
       
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -609,13 +643,17 @@ final class GameViewModel: ObservableObject {
 
     if (intersectsRotatingCross(center: big, radius: 10) ||
         intersectsRotatingCross(center: small, radius: 5)) && currentLevel == 10 {
-      resetGame()
+      loseAnimation = 1
+      DispatchQueue.main.asyncAfter(deadline: .now() +  0.2) { [weak self] in
+        self?.resetGame()
+      }
     }
     
     if currentLevel == 4, movingRect4 != nil {
       let r = movingRect4Frame
       if circleIntersectsRect(center: big,   radius: bigrad,   rect: r) ||
           circleIntersectsRect(center: small, radius: smallrad, rect: r) {
+        loseAnimation = 1
         resetGame()
         return
       }
@@ -625,6 +663,7 @@ final class GameViewModel: ObservableObject {
         for r in movingRects5Frames {
             if circleIntersectsRect(center: big, radius: bigrad, rect: r) ||
                circleIntersectsRect(center: small, radius: smallrad, rect: r) {
+               loseAnimation = 1
                 resetGame()
                 return
             }
@@ -634,6 +673,7 @@ final class GameViewModel: ObservableObject {
     if currentLevel == 6 {
       if circleIntersectsRect(center: big, radius: 10, rect: movingBlockRect) ||
           circleIntersectsRect(center: small, radius: 5, rect: movingBlockRect) {
+        loseAnimation = 1
         resetGame()
         return
       }

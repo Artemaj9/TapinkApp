@@ -8,12 +8,10 @@ struct Wardrobe: View {
   var body: some View {
     ZStack {
       bg
-      
-      
+    
       Image(.light)
         .resizableToFit()
         .scaleEffect(1.1)
-      // .overlayM
         .yOffset(-vm.h*0.28)
         .blendMode(.luminosity)
       Image("b\(vm.currentSkin)")
@@ -110,6 +108,7 @@ struct Wardrobe: View {
         
       }
       .yOffset(vm.h*0.2)
+      .yOffsetIf(vm.isSEight, -24)
     }
     .navigationBarBackButtonHidden()
     .onAppear {
